@@ -32,10 +32,28 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# firebase service account credentials — never commit
+*serviceAccount*.json
+*service-account*.json
+*firebase-adminsdk*.json
 
 # vercel
 .vercel
 
+# firebase emulator
+.firebase-emulator-data/
+.firebase/
+firebase-debug.log
+firestore-debug.log
+storage-debug.log
+ui-debug.log
+database-debug.log
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Claude Code local machine settings (permission allowlist, etc.)
+.claude/settings.local.json

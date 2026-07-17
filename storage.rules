@@ -1,0 +1,19 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // All uploads happen via short-lived signed URLs minted server-side
+    // (Admin SDK), which bypass these rules entirely — so writes here are
+    // always denied. Reads are allowed to any signed-in device since
+    // resources/ticket attachments are meant to be viewable once you're in.
+    match /resources/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /tickets/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}

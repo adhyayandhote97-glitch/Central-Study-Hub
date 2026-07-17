@@ -1,0 +1,107 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.role == 'admin';
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Created/updated only by the Admin SDK at login time.
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if false;
+    }
+
+    // Fixed set of MYP5 subjects (with embedded topics) — readable by any
+    // signed-in device, editable by admins via the API only for consistent
+    // activity logging, but rules double as a hard backstop.
+    match /subjects/{subjectId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /resources/{resourceId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // All ticket mutations (create, reply, status change, reopen) go through
+    // API routes for validation + activity logging. Reads are open directly
+    // to the owner or an admin so "My Tickets" / admin inbox can use
+    // real-time listeners without a round trip. Internal admin notes are
+    // intentionally NOT a field on this document — Firestore rules are
+    // document-level, not field-level, so anything admin-only must live in
+    // a separate, admin-only-readable collection (see ticketNotes below).
+    match /tickets/{ticketId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.ownerUid == request.auth.uid);
+      allow write: if false;
+    }
+
+    // Admin-only internal notes, kept out of the student-readable ticket
+    // document entirely.
+    match /ticketNotes/{ticketId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Homepage content managed by admins (Fact of the Day, How to Study) —
+    // readable by any signed-in device, written server-side via the Admin SDK.
+    match /dailyFacts/{factId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /studyTips/{tipId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Low-risk, high-frequency, per-device interactions — safe as direct
+    // client writes because they're fully scoped to the caller's own uid.
+    match /favorites/{docId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /recentViews/{docId} {
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update: if false;
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    match /downloads/{docId} {
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // Event log powering Recent Activity + Analytics — server-only.
+    match /analytics/{eventId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Defense in depth: any collection not explicitly matched above is denied
+    // outright, so a future collection can never be silently world-readable.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

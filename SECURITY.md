@@ -44,6 +44,8 @@ layers**, so a bypass of any one layer is still caught by the others:
   are document-level, not field-level.
 - **Storage rules deny all client writes.** Uploads are streamed through the
   Admin SDK server-side; the browser never holds a Storage write credential.
+  (Firebase Storage is optional on this project — see `DEPLOYMENT.md` §0;
+  `storage.rules` is simply inert on deployments that skip enabling Storage.)
 - **Input validation** on every mutating route uses shared Zod schemas.
 - **No XSS sinks:** no `dangerouslySetInnerHTML` on user content (the only use is
   shadcn's chart component injecting developer-defined CSS variables), and every

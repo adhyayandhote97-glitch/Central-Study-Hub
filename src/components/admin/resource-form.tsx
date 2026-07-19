@@ -7,6 +7,7 @@ import type { Resource, ResourceCategory } from "@/types/resource";
 import type { Subject } from "@/types/subject";
 import { RESOURCE_CATEGORIES, RESOURCE_TYPE_LABELS } from "@/lib/constants";
 import { detectLinkType } from "@/lib/resource-type";
+import { isStorageAvailableClient } from "@/lib/storage-availability";
 import { useResourceUpload } from "@/hooks/use-resource-upload";
 import { FileDropzone } from "./file-dropzone";
 import { Button } from "@/components/ui/button";
@@ -33,8 +34,11 @@ interface ResourceFormProps {
 export function ResourceForm({ subjects, resource, onSaved, onCancel }: ResourceFormProps) {
   const isEdit = Boolean(resource);
   const upload = useResourceUpload();
+  const storageAvailable = isStorageAvailableClient();
 
-  const [sourceKind, setSourceKind] = React.useState<"file" | "link">(resource?.sourceKind ?? "file");
+  const [sourceKind, setSourceKind] = React.useState<"file" | "link">(
+    resource?.sourceKind ?? (storageAvailable ? "file" : "link")
+  );
   const [externalUrl, setExternalUrl] = React.useState(resource?.externalUrl ?? "");
   const [title, setTitle] = React.useState(resource?.title ?? "");
   const [description, setDescription] = React.useState(resource?.description ?? "");
@@ -141,7 +145,7 @@ export function ResourceForm({ subjects, resource, onSaved, onCancel }: Resource
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
-      {!isEdit && (
+      {!isEdit && storageAvailable && (
         <Tabs value={sourceKind} onValueChange={(v) => setSourceKind(v as "file" | "link")}>
           <TabsList>
             <TabsTrigger value="file">
@@ -171,6 +175,11 @@ export function ResourceForm({ subjects, resource, onSaved, onCancel }: Resource
       ) : (
         <div className="space-y-1.5">
           <Label htmlFor="externalUrl">Link URL</Label>
+          {!isEdit && !storageAvailable && (
+            <p className="text-xs text-muted-foreground">
+              File uploads are disabled on this deployment — paste a Google Drive, Google Docs/Slides/Sheets, or YouTube link instead.
+            </p>
+          )}
           <Input
             id="externalUrl"
             type="url"

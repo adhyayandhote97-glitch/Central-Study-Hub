@@ -10,6 +10,7 @@ import { ticketInputSchema, type TicketInputPayload } from "@/lib/validation/tic
 import { TICKET_PRIORITIES, TICKET_TYPES } from "@/lib/constants";
 import { useSubjects } from "@/hooks/use-subjects";
 import { useAttachmentUpload } from "@/hooks/use-attachment-upload";
+import { isStorageAvailableClient } from "@/lib/storage-availability";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,7 @@ import { TicketConfirmation } from "./ticket-confirmation";
 export function TicketForm() {
   const { subjects } = useSubjects();
   const { attachment, uploading, error: uploadError, upload, clear: clearAttachment } = useAttachmentUpload();
+  const storageAvailable = isStorageAvailableClient();
   const [submitted, setSubmitted] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -210,57 +212,59 @@ export function TicketForm() {
         )}
       </div>
 
-      <div className="space-y-1.5">
-        <Label>Attachment (optional)</Label>
-        {attachment ? (
-          <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
-            <Paperclip className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-            <span className="flex-1 truncate">{attachment.fileName}</span>
-            <button
-              type="button"
-              onClick={clearAttachment}
-              className="rounded-sm text-muted-foreground hover:text-destructive focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-              aria-label="Remove attachment"
-            >
-              <X className="size-4" aria-hidden="true" />
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="sr-only"
-              id="attachment"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) upload(file);
-                event.target.value = "";
-              }}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={uploading}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {uploading ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <Paperclip className="size-4" aria-hidden="true" />
-              )}
-              {uploading ? "Uploading…" : "Attach a file"}
-            </Button>
-            <span className="text-xs text-muted-foreground">Up to 25MB</span>
-          </div>
-        )}
-        {uploadError && (
-          <p role="alert" className="text-sm text-destructive">
-            {uploadError}
-          </p>
-        )}
-      </div>
+      {storageAvailable && (
+        <div className="space-y-1.5">
+          <Label>Attachment (optional)</Label>
+          {attachment ? (
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
+              <Paperclip className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <span className="flex-1 truncate">{attachment.fileName}</span>
+              <button
+                type="button"
+                onClick={clearAttachment}
+                className="rounded-sm text-muted-foreground hover:text-destructive focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                aria-label="Remove attachment"
+              >
+                <X className="size-4" aria-hidden="true" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="sr-only"
+                id="attachment"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) upload(file);
+                  event.target.value = "";
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={uploading}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploading ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Paperclip className="size-4" aria-hidden="true" />
+                )}
+                {uploading ? "Uploading…" : "Attach a file"}
+              </Button>
+              <span className="text-xs text-muted-foreground">Up to 25MB</span>
+            </div>
+          )}
+          {uploadError && (
+            <p role="alert" className="text-sm text-destructive">
+              {uploadError}
+            </p>
+          )}
+        </div>
+      )}
 
       <Button type="submit" size="lg" disabled={isSubmitting || uploading} className="w-full sm:w-auto">
         {isSubmitting ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}

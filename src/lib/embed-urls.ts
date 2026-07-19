@@ -34,6 +34,11 @@ export function getGoogleEmbedUrl(url: string, type: ResourceType): string | nul
       return `https://docs.google.com/presentation/d/${id}/embed`;
     case "gsheet":
       return `https://docs.google.com/spreadsheets/d/${id}/preview`;
+    case "gdrive":
+      // A raw file (PDF, image, video, etc.) shared from Drive rather than a
+      // native Doc/Slide/Sheet — Drive's own file viewer embeds the same way
+      // when the file is shared "Anyone with the link".
+      return `https://drive.google.com/file/d/${id}/preview`;
     default:
       return null;
   }

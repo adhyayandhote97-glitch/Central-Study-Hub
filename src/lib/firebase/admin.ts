@@ -46,10 +46,13 @@ function getAdminApp(): App {
     return initializeApp({ projectId, storageBucket });
   }
 
-  if (!projectId || !clientEmail || !privateKey || !storageBucket) {
+  // storageBucket is intentionally NOT required here — Storage is optional
+  // (see isFirebaseStorageConfigured below). Auth and Firestore have no
+  // dependency on it and must be able to initialize without it.
+  if (!projectId || !clientEmail || !privateKey) {
     throw new Error(
       "Firebase Admin credentials are missing. Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, " +
-        "FIREBASE_PRIVATE_KEY, and FIREBASE_STORAGE_BUCKET in your environment. See .env.example."
+        "and FIREBASE_PRIVATE_KEY in your environment. See .env.example."
     );
   }
 
@@ -84,7 +87,16 @@ export function isFirebaseAdminConfigured(): boolean {
   return Boolean(
     process.env.FIREBASE_PROJECT_ID &&
       process.env.FIREBASE_CLIENT_EMAIL &&
-      process.env.FIREBASE_PRIVATE_KEY &&
-      process.env.FIREBASE_STORAGE_BUCKET
+      process.env.FIREBASE_PRIVATE_KEY
   );
+}
+
+/**
+ * Whether Firebase Storage is usable — separate from Auth/Firestore because
+ * Storage requires the Blaze plan on new Firebase projects (a card on file),
+ * while Auth/Firestore stay free on Spark. Upload routes must check this
+ * explicitly rather than assuming Storage is always available.
+ */
+export function isFirebaseStorageConfigured(): boolean {
+  return Boolean(process.env.FIREBASE_STORAGE_BUCKET);
 }

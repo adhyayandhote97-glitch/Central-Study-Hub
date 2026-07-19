@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { apiErrorResponse, requireRole } from "@/lib/auth/requireRole";
 import { saveUpload } from "@/lib/storage-upload";
+import { isFirebaseStorageConfigured } from "@/lib/firebase/admin";
 import { MAX_ATTACHMENT_BYTES } from "@/lib/constants";
 import { formatBytes } from "@/lib/format-bytes";
 import { validateUploadFile } from "@/lib/upload-validation";
@@ -11,6 +12,13 @@ export const runtime = "nodejs";
 export async function POST(request: NextRequest) {
   try {
     await requireRole(request, ["student", "admin"]);
+
+    if (!isFirebaseStorageConfigured()) {
+      return NextResponse.json(
+        { error: "File attachments aren't available on this deployment." },
+        { status: 503 }
+      );
+    }
 
     const formData = await request.formData().catch(() => null);
     const file = formData?.get("file");

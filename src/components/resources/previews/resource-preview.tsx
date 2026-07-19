@@ -29,7 +29,8 @@ export function ResourcePreview({ resource }: { resource: Resource }) {
     }
     case "gdoc":
     case "gslide":
-    case "gsheet": {
+    case "gsheet":
+    case "gdrive": {
       const embedUrl = getGoogleEmbedUrl(url, resource.resourceType);
       if (!embedUrl) return <DownloadFallbackCard resource={resource} />;
       return <GoogleEmbedPreview embedUrl={embedUrl} title={resource.title} />;

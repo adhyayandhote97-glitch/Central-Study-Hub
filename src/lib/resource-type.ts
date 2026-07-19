@@ -90,5 +90,5 @@ export function getResourceIcon(type: ResourceType): LucideIcon {
 
 /** Whether this resource type can be embedded in an inline preview. */
 export function isPreviewable(type: ResourceType): boolean {
-  return type !== "docx" && type !== "pptx" && type !== "xlsx" && type !== "zip" && type !== "gdrive";
+  return type !== "docx" && type !== "pptx" && type !== "xlsx" && type !== "zip";
 }

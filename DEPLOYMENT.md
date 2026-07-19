@@ -4,9 +4,19 @@ This guide takes Central Study Hub from local development to a live, HTTPS,
 custom-domain production deployment using the recommended stack:
 
 - **Vercel** (Hobby / Free plan) — hosts the Next.js app (SSR + API routes)
-- **Firebase Spark** (free plan) — Authentication, Firestore, Storage
-- **Google Drive** (Google Workspace or personal) — supplementary storage for
-  large resource files, linked in as external resources
+- **Firebase Spark** (free plan) — Authentication and Firestore
+- **Google Drive** (Google Workspace or personal) — the file-hosting method,
+  linked in as external resources (see the Storage note below)
+
+> **A note on Firebase Storage.** As of October 2024, Google requires the
+> paid **Blaze** plan just to *enable* Cloud Storage for Firebase on a new
+> project — even though usage would still fall under what used to be Spark's
+> free allowance. Blaze requires a card on file. **If you can't or don't want
+> to attach a card, skip Storage entirely** — the app is designed to run fully
+> on Auth + Firestore alone, with all files hosted on Google Drive (or
+> YouTube for video) and added as **Link** resources instead of uploads. This
+> guide covers both paths; the card-free path is the default assumption
+> throughout.
 
 > **Read this first — the app is server-rendered.** Central Study Hub uses
 > Next.js App Router with API routes, middleware, and server components. It is
@@ -26,8 +36,9 @@ a Cloud Function. This project does neither:
 
 - The app is hosted on **Vercel**, a separate product entirely — Firebase's
   Spark/Blaze distinction doesn't apply to it at all.
-- Firebase is used only for **Auth, Firestore, and Storage** — all three are
-  available on Spark, with generous daily free quotas (see the table below).
+- Firebase is used for **Auth and Firestore**, both available on Spark with
+  generous daily free quotas (see the table below). **Storage is optional** —
+  see the card-required note above; the app runs correctly without it.
 - There are **no Cloud Functions** anywhere in this project (confirmed: no
   `functions/` directory, no `firebase-functions` dependency). All server
   logic runs as Next.js API routes on Vercel, not as Firebase Cloud Functions,
@@ -43,8 +54,8 @@ a Cloud Function. This project does neither:
 | Service | Free quota | Notes |
 |---|---|---|
 | Firestore | 50K reads/day, 20K writes/day, 20K deletes/day, 1 GiB stored | Resets daily |
-| Storage | 5 GB stored, 1 GB/day served, 20K uploads/day | Resets daily |
 | Authentication | Unlimited | Custom-token sign-in (what this app uses) has no per-verification cost on any plan |
+| Storage | 5 GB stored, 1 GB/day served, 20K uploads/day | **Requires Blaze to enable at all**, even to use this free allowance — see the note above. Skip it if you can't attach a card. |
 
 For a single school cohort, day-to-day usage sits comfortably inside these
 limits — see `PROJECT_DEPLOYMENT_COSTS.md` for cohort-size estimates. If a
@@ -72,21 +83,25 @@ both.
 1. Go to the [Firebase Console](https://console.firebase.google.com/) → **Add
    project**. Give it a real name (e.g. `central-study-hub`). Leave it on the
    default **Spark** plan — no billing account is required.
-2. Enable the three services:
+2. Enable Authentication and Firestore:
    - **Authentication** → Get started. No sign-in provider toggle is needed —
      custom-token sign-in (what this app uses) works as soon as Auth is enabled.
    - **Firestore Database** → Create database → production mode → pick a region
      close to your users (e.g. `asia-south1` for India).
-   - **Storage** → Get started → production mode → same region.
+3. **Storage — only if you can attach a card.** Clicking **Storage → Get
+   started** will prompt you to upgrade to Blaze. If that's not possible,
+   skip this service entirely and continue to §3 below — the app runs
+   correctly without it (file uploads are simply replaced by Link resources).
+   If you *can* upgrade, go ahead and enable it (production mode, same
+   region) for the "Upload file" option in the admin UI.
 
 ---
 
-## 3. Set up Google Drive for large files (optional, supplementary)
+## 3. Google Drive as your file-hosting method
 
-Firebase Storage's free tier (5 GB stored, 1 GB/day served) comfortably covers
-notes, past papers, and images. For a handful of large files — long video
-recordings, big archive bundles — you can instead host them in Google Drive
-and link them into the app as external resources, at no Firebase cost:
+Whether or not Firebase Storage is enabled, Google Drive works as the primary
+(or, if Storage is enabled, supplementary) way to host resource files, at no
+Firebase cost:
 
 1. Create a folder in Google Drive (a Workspace shared drive if your school has
    one, or a regular My Drive folder) to hold study resources.
@@ -95,15 +110,17 @@ and link them into the app as external resources, at no Firebase cost:
    Google account, so the link must be viewable without a Google sign-in
    prompt — "Anyone with the link" is required, not "Restricted".)
 3. Copy the share link.
-4. In the Admin Console → **Upload Resource**, choose the **Link** option
-   (instead of File Upload) and paste the Drive link as the resource URL. The
-   app already recognises `drive.google.com` / `docs.google.com` links
-   (`src/lib/resource-type.ts`) and shows the correct Drive/Docs/Slides/Sheets
-   icon automatically — no extra configuration needed.
+4. In the Admin Console → **Upload Resource**, choose the **Link** option and
+   paste the Drive link as the resource URL. The app recognises
+   `drive.google.com` / `docs.google.com` links (`src/lib/resource-type.ts`)
+   automatically, shows the correct Drive/Docs/Slides/Sheets icon, and embeds
+   the file **inline in the page** — students never get redirected to a
+   separate Drive tab to view it.
 
-This is entirely optional and requires no API keys or code changes — it's the
-same "external link" resource type the app already supports for YouTube and
-other external URLs.
+This requires no API keys, no Google Cloud project, and no code changes — the
+app already ships with this support built in. If Storage isn't enabled
+(§2), the admin Resource form only offers the Link option; if it is enabled,
+both File Upload and Link are available side by side.
 
 ---
 
@@ -118,10 +135,13 @@ for the full annotated list). The groups:
 - **Firebase Admin SDK** (server-only) — from Project settings → Service
   accounts → **Generate new private key**. Copy `project_id`, `client_email`,
   and `private_key` from the downloaded JSON into `FIREBASE_PROJECT_ID`,
-  `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` (keep the quotes and `\n`),
-  and set `FIREBASE_STORAGE_BUCKET`.
+  `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` (keep the quotes and `\n`).
+  Set `FIREBASE_STORAGE_BUCKET` **only if you enabled Storage** in §2 — leave
+  it unset otherwise; the app detects this and disables file uploads
+  automatically.
 - **Firebase Web SDK** (`NEXT_PUBLIC_*`, safe to expose) — from Project settings
-  → General → Your apps → Web app → SDK config.
+  → General → Your apps → Web app → SDK config. Same rule applies to
+  `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` — set it only if Storage is enabled.
 
 > On Vercel these are set as **Environment Variables** in the project
 > dashboard, not a committed `.env.local`. See §6.
@@ -159,12 +179,17 @@ Re-run this whenever `firestore.rules`, `storage.rules`, or
 4. **Add environment variables** — in the import screen (or later under
    **Project → Settings → Environment Variables**), add every variable from
    §4: `STUDENT_ACCESS_KEY`, `ADMIN_ACCESS_KEY`, `SESSION_SECRET`,
-   `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`,
-   `FIREBASE_STORAGE_BUCKET`, and the six `NEXT_PUBLIC_FIREBASE_*` values.
-   Apply them to the **Production** environment (and Preview/Development too,
-   if you want preview deployments to work against the same project).
+   `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, and
+   the five `NEXT_PUBLIC_FIREBASE_*` values (API key, auth domain, project ID,
+   messaging sender ID, app ID). Apply them to the **Production** environment
+   (and Preview/Development too, if you want preview deployments to work
+   against the same project).
    - `FIREBASE_PRIVATE_KEY` spans multiple lines with literal `\n` sequences —
      paste it exactly as it appears in `.env.local`, including the quotes.
+   - **Skip `FIREBASE_STORAGE_BUCKET` and `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+     entirely** if you didn't enable Storage in §2 — don't set them to a
+     placeholder or empty string, just omit them. The app treats "unset" as
+     "Storage isn't available" and disables file uploads accordingly.
 5. Click **Deploy**. Vercel builds the app and gives you a live
    `https://<project>.vercel.app` URL over HTTPS within a minute or two.
 
@@ -259,7 +284,10 @@ catches problems before they hit the deploy.
 - [ ] All environment variables set in Vercel (Production environment)
 - [ ] Custom domain resolves over HTTPS with a valid certificate
 - [ ] Student and admin login both work on the live URL
-- [ ] 16 subjects present; a test upload, announcement, and ticket round-trip works
-- [ ] (If using Drive) a test Drive-linked resource opens correctly for a student
+- [ ] 16 subjects present; a test resource, announcement, and ticket round-trip works
+- [ ] A test Drive-linked resource opens as an in-page preview for a student
+      (not a redirect to a separate Drive tab)
+- [ ] If Storage was skipped: confirm the admin Resource form only offers
+      "Link" and the Student Voice form has no "Attach a file" option
 - [ ] Firebase project confirmed on the **Spark** plan (Project settings →
       Usage and billing) — no billing account attached

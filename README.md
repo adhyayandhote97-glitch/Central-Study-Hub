@@ -1,5 +1,9 @@
 # Central Study Hub
 
+> **Also in this repository: [Verbund](verbund/README.md).** Verbund is an explainable buddy-matching platform for new
+> students (Python/FastAPI + SQLite + optional local AI through Ollama). It lives in `verbund/` and is independent of
+> the Next.js app below. Run it with `verbund/run.bat` (Windows) or `verbund/run.sh` (macOS/Linux).
+
 A premium academic portal that centralises every learning resource for MYP5 students at
 Victorious Kidss Educares — replacing scattered Drive folders, chat messages and lost links with
 one calm, fast, beautiful place.

@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="shell">
+  <aside class="sidebar">
+   <div class="sidebar-inner">
+    <a class="brand" href="/"><span class="brand-word">Verbund</span><span class="brand-tag">Buddy matching</span></a>
+    <nav class="nav" aria-label="Main pages">
+      {% for key, label, href, icon_name in NAV %}
+      <a href="{{ href }}"{% if active == key %} aria-current="page"{% endif %}>
+        {{ m.icon(icon_name) }}<span>{{ label }}</span>
+        {% if key == "review" and nav_counts.review %}<span class="count" aria-label="{{ nav_counts.review }} waiting">{{ nav_counts.review }}</span>{% endif %}
+      </a>
+      {% endfor %}
+    </nav>
+    <div class="sidebar-foot">
+      <nav class="nav" aria-label="Settings">
+        <a class="nav-settings" href="/settings"{% if active == "settings" %} aria-current="page"{% endif %}>{{ m.icon("gear-six") }}<span class="label">Settings</span></a>
+      </nav>
+      <button class="theme-toggle" type="button" data-theme-toggle>
+        <span class="when-light">{{ m.icon("moon") }}</span><span class="when-dark">{{ m.icon("sun") }}</span>
+        <span class="label"><span class="when-light">Dark mode</span><span class="when-dark">Light mode</span></span>
+      </button>
+      <p class="who">Staff view. No sign-in in this version.</p>
+    </div>
+   </div>
+  </aside>
+  <main class="main" id="main">
+    <div class="container">
+      {% include "partials/flash.html" %}
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+{% block after %}{% endblock %}
+{% endblock %}

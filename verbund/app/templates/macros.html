@@ -1,0 +1,75 @@
+{% set MATCH_STATUS = {"suggested": "Suggested", "approved": "Matched", "reassigned": "Manually reassigned", "declined": "Declined"} %}
+{% set BAND_LABEL = {"strong": "Strong match", "good": "Good match", "weak": "Weak match"} %}
+
+{% macro icon(name, cls="icon") -%}
+<svg class="{{ cls }}" aria-hidden="true" focusable="false"><use href="/static/icons/sprite.svg#i-{{ name }}"></use></svg>
+{%- endmacro %}
+
+{% macro chip(status, label) -%}
+<span class="chip chip-{{ status }}">{{ label }}</span>
+{%- endmacro %}
+
+{% macro match_chip(status) -%}
+{{ chip(status, MATCH_STATUS[status]) }}
+{%- endmacro %}
+
+{% macro band_chip(band) -%}
+{{ chip(band, BAND_LABEL[band]) }}
+{%- endmacro %}
+
+{# One stacked bar: each coloured segment is one factor's points; the pale
+   remainder is the points the pair did not earn. #}
+{% macro scorebar(factors, score, large=false) -%}
+<svg class="scorebar{% if large %} scorebar-lg{% endif %}" viewBox="0 0 100 10" preserveAspectRatio="none" role="img"
+     aria-label="Score {{ score }} out of 100. {% for f in factors %}{{ f.label }}: {{ f.points|pts }} of {{ f.weight|pts }}. {% endfor %}">
+  <rect class="track" x="0" y="0" width="100" height="10"></rect>
+  {%- set ns = namespace(x=0) %}
+  {%- for f in factors if f.points > 0 %}
+  <rect class="f-{{ f.key }}" x="{{ '%.2f'|format(ns.x) }}" y="0" width="{{ '%.2f'|format([f.points - 0.6, 0.4]|max) }}" height="10"><title>{{ f.label }}: {{ f.points|pts }} of {{ f.weight|pts }} points</title></rect>
+  {%- set ns.x = ns.x + f.points %}
+  {%- endfor %}
+</svg>
+{%- endmacro %}
+
+{% macro legend() -%}
+<div class="legend" aria-hidden="true">
+  {% for key, label in FACTORS %}<span><i class="swatch f-{{ key }}"></i>{{ label }}</span>{% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro pair_row(p, selectable=false, show_approve=true, compact=false) -%}
+<li class="pair{% if p.band == 'weak' %} is-flagged{% endif %}">
+  {% if selectable %}
+  <label class="sr-only" for="pick-{{ p.id }}">Select {{ p.new_name }} and {{ p.buddy_name }}</label>
+  <input class="pair-check" id="pick-{{ p.id }}" type="checkbox" name="match_ids" value="{{ p.id }}"{% if p.status != 'suggested' %} disabled{% endif %}>
+  {% endif %}
+  <div class="score score-cell">
+    <span class="score-num">{{ p.score }}</span>
+    {{ scorebar(p.factors, p.score) }}
+  </div>
+  <div class="names">
+    <span class="who-line">
+      <a href="/review/{{ p.id }}">{{ p.new_name }}</a>
+      <span class="arrow" aria-hidden="true">&rarr;</span><span class="sr-only">paired with</span>
+      <span>{{ p.buddy_name }}</span>
+    </span>
+    <span class="why">{{ p.headline }}</span>
+    <span class="meta">
+      <span class="hint">Grade {{ p.new_grade }}{% if p.buddy_grade != p.new_grade %} / {{ p.buddy_grade }}{% endif %}</span>
+      {% if p.band == 'weak' %}{{ band_chip(p.band) }}{% endif %}
+      {% if p.status != 'suggested' %}{{ match_chip(p.status) }}{% endif %}
+      {% if p.explanation_status == 'ollama' %}<span class="chip chip-plain">Explained by local AI</span>{% elif p.explanation_status == 'queued' %}<span class="chip chip-plain">Writing explanation…</span>{% endif %}
+    </span>
+  </div>
+  <div class="row-actions">
+    <a class="btn btn-secondary btn-small" href="/review/{{ p.id }}">Review</a>
+    {% if show_approve and p.status == 'suggested' %}
+      {% if selectable %}
+      <button class="btn btn-quiet btn-small" type="submit" formaction="/review/{{ p.id }}/approve">Approve</button>
+      {% else %}
+      <form method="post" action="/review/{{ p.id }}/approve"><button class="btn btn-quiet btn-small" type="submit">Approve</button></form>
+      {% endif %}
+    {% endif %}
+  </div>
+</li>
+{%- endmacro %}

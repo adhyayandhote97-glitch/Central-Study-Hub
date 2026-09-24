@@ -1,0 +1,99 @@
+{% extends "staff.html" %}
+{% block title %}Matching{% endblock %}
+{% block content %}
+{% set qs = filters|urlencode %}
+<div class="page-head">
+  <div class="titles">
+    <p class="eyebrow">Matching</p>
+    <h1>Suggested pairings</h1>
+    <p class="lede">One suggestion per new student without a confirmed buddy, ranked by compatibility score. The student with the most to lose picks first, so nobody loses their only good buddy to someone with plenty of options.</p>
+  </div>
+  <div class="actions">
+    <form method="post" action="/matching/run">
+      <button class="btn btn-secondary" type="submit">{{ m.icon("arrows-clockwise", "icon-sm") }}{{ "Run matching again" if fresh.run else "Run matching" }}</button>
+    </form>
+    <a class="btn btn-secondary" href="/matching/export.csv?{{ qs }}">{{ m.icon("download-simple", "icon-sm") }}Export CSV</a>
+  </div>
+</div>
+
+{% set show_run = false %}
+{% include "partials/freshness.html" %}
+
+{% if unplaced %}
+<section class="panel" aria-labelledby="flag-title">
+  <div class="panel-head"><h2 id="flag-title">{{ m.icon("warning") }} No buddy suggested</h2><span class="hint">{{ plural(unplaced|length, "student") }}</span></div>
+  <ul class="activity panel-body">
+    {% for u in unplaced %}
+    <li>
+      <span><strong>{{ u.name }}</strong> (Grade {{ u.grade }}).
+        {% if u.open %}{{ plural(u.open, "buddy", "buddies") }} with room. Run matching again to suggest one.
+        {% else %}Nobody could be suggested:
+          {% for reason, n in u.excluded.items() %}{{ n }} {{ reason }}{{ ", " if not loop.last else "." }}{% else %}there are no buddies yet.{% endfor %}
+        {% endif %}</span>
+      <a class="btn btn-secondary btn-small" href="/students?open={{ u.id }}">Open profile</a>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+<div class="divider"></div>
+{% endif %}
+
+<nav class="tabs" aria-label="Filter by status">
+  {% for key, label in [("suggested", "Waiting for review"), ("approved", "Approved"), ("reassigned", "Manually reassigned"), ("", "All")] %}
+  <a href="/matching?status={{ key }}&amp;grade={{ filters.grade }}&amp;band={{ filters.band }}&amp;sort={{ filters.sort }}"{% if filters.status == key %} aria-current="true"{% endif %}>{{ label }}</a>
+  {% endfor %}
+</nav>
+
+<form class="filters" method="get" action="/matching" data-autosubmit>
+  <input type="hidden" name="status" value="{{ filters.status }}">
+  <div class="field"><label for="f-grade">Grade</label>
+    <select id="f-grade" name="grade"><option value="">All grades</option>
+      {% for g in grades %}<option value="{{ g }}"{% if filters.grade == g|string %} selected{% endif %}>Grade {{ g }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field"><label for="f-band">Strength</label>
+    <select id="f-band" name="band"><option value="">Any score</option>
+      <option value="strong"{% if filters.band == 'strong' %} selected{% endif %}>Strong (75+)</option>
+      <option value="good"{% if filters.band == 'good' %} selected{% endif %}>Good (55–74)</option>
+      <option value="weak"{% if filters.band == 'weak' %} selected{% endif %}>Weak (under 55)</option>
+    </select>
+  </div>
+  <div class="field"><label for="f-sort">Sort by</label>
+    <select id="f-sort" name="sort">
+      <option value="score"{% if filters.sort == 'score' %} selected{% endif %}>Highest score first</option>
+      <option value="low"{% if filters.sort == 'low' %} selected{% endif %}>Lowest score first</option>
+      <option value="name"{% if filters.sort == 'name' %} selected{% endif %}>New student's name</option>
+    </select>
+  </div>
+  <button class="btn btn-secondary apply" type="submit">Apply</button>
+</form>
+
+{% if matches %}
+<form method="post" action="/matching/approve" data-bulk>
+  <div class="panel">
+    <ul class="pair-list">
+      {% for p in matches %}{{ m.pair_row(p, selectable=true) }}{% endfor %}
+    </ul>
+    <div class="panel-body">{{ m.legend() }}</div>
+  </div>
+  {% if filters.status == "suggested" %}
+  <div class="bulk-bar">
+    <label class="select-all"><input type="checkbox" data-bulk-all> Select all waiting</label>
+    <button class="btn btn-primary" type="submit" data-bulk-submit>{{ m.icon("check", "icon-sm") }}Approve <span data-bulk-count>0</span> selected</button>
+  </div>
+  {% endif %}
+</form>
+{% else %}
+<div class="panel empty">
+  <h3>{% if filters.status == "suggested" and not fresh.run %}Matching has not run yet{% elif filters.status == "suggested" %}Nothing waiting for review{% else %}No pairings here{% endif %}</h3>
+  <p class="muted">{% if stats.need_buddy %}{{ plural(stats.need_buddy, "new student") }} still {{ "needs" if stats.need_buddy == 1 else "need" }} a confirmed buddy. Run matching to suggest one for each.{% else %}Every new student has a confirmed buddy.{% endif %}</p>
+  {% if stats.need_buddy %}
+  <form method="post" action="/matching/run"><button class="btn btn-primary" type="submit">{{ m.icon("arrows-clockwise", "icon-sm") }}Run matching</button></form>
+  {% endif %}
+</div>
+{% endif %}
+
+<p class="hint after-note">
+  For your expert evaluation: <a href="/matching/comparison.csv">download a blind comparison sheet</a>. The expert writes down their own pick for each new student before seeing Verbund's.
+</p>
+{% endblock %}

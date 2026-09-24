@@ -1,0 +1,165 @@
+{% extends "staff.html" %}
+{% block title %}{{ match.new_first }} and {{ match.buddy_first }}{% endblock %}
+{% block content %}
+<div class="queue-nav">
+  <a href="/matching">{{ m.icon("arrow-left", "icon-sm") }} All suggestions</a>
+  {% if queue_pos %}<span>Suggestion <strong>{{ queue_pos }}</strong> of {{ queue_len }} waiting (weakest first)</span>
+  {% elif queue_len %}<span>{{ plural(queue_len, "suggestion") }} still waiting</span>{% endif %}
+  {% if next_id %}<a href="/review/{{ next_id }}">Next suggestion {{ m.icon("arrow-right", "icon-sm") }}</a>{% endif %}
+</div>
+
+<div class="review-head">
+  <div class="big-score" aria-label="Score {{ match.score }} out of 100">{{ match.score }}<small>/100</small></div>
+  <div class="pair-title">
+    <p class="meta">{{ m.match_chip(match.status) }} {{ m.band_chip(match.band) }}</p>
+    <h1>{{ match.new_name }} <span class="and">and</span> {{ match.buddy_name }}</h1>
+    <p class="muted">New student in Grade {{ match.new_grade }}{% if match.new_homeroom %} ({{ match.new_homeroom }}){% endif %}.
+      Suggested buddy in Grade {{ match.buddy_grade }}{% if match.buddy_homeroom %} ({{ match.buddy_homeroom }}){% endif %}.</p>
+  </div>
+</div>
+
+<div class="split-review">
+  <div class="stack">
+    <section aria-labelledby="why-title">
+      <h2 id="why-title" class="sr-only">Why this pair</h2>
+      <div class="why-box" data-explanation="/api/matches/{{ match.id }}/explanation" data-status="{{ match.explanation_status }}">
+        <p class="eyebrow">Why this pair</p>
+        <p class="explanation">{{ match.explanation }}</p>
+        {% if match.explanation_status == "ollama" %}
+          <p class="source"><span class="dot"></span>Written by local AI ({{ OLLAMA_MODEL }}) from the score breakdown below. The AI explains; it does not choose.</p>
+        {% elif match.explanation_status == "queued" %}
+          <p class="source is-queued"><span class="dot"></span>The local AI is writing a fuller explanation. This page updates when it is ready.</p>
+        {% else %}
+          <p class="source is-template"><span class="dot"></span>Summary template, built from the score breakdown below.</p>
+        {% endif %}
+      </div>
+      {% if match.explanation_status != "queued" and match.status != "declined" %}
+      <form method="post" action="/review/{{ match.id }}/explain">
+        <button class="btn btn-quiet btn-small" type="submit">{{ m.icon("chat-text", "icon-sm") }}{{ "Ask the local AI again" if match.explanation_status == "ollama" else "Ask the local AI to explain" }}</button>
+      </form>
+      {% endif %}
+    </section>
+
+    <section class="panel" aria-labelledby="breakdown-title">
+      <div class="panel-head"><h2 id="breakdown-title">Side by side</h2><span class="hint">Shared items are highlighted</span></div>
+      <div class="panel-body">
+        {{ m.scorebar(match.factors, match.score, large=true) }}
+        {{ m.legend() }}
+      </div>
+      <div class="table-wrap">
+        <table class="compare">
+          <caption class="sr-only">How {{ match.new_first }} and {{ match.buddy_first }} compare on each factor</caption>
+          <thead><tr><th scope="col">Factor</th><th scope="col">{{ match.new_first }} (new)</th><th scope="col">{{ match.buddy_first }} (buddy)</th><th scope="col" class="points">Points</th></tr></thead>
+          <tbody>
+          {% for r in rows %}
+          <tr>
+            <th scope="row"><span class="factor"><i class="swatch f-{{ r.key }}"></i>{{ r.label }}</span><span class="note">{{ r.note }}</span></th>
+            <td data-label="{{ match.new_first }}">{% for text, shared in r.new_items %}<span class="tag{% if shared %} tag-shared{% endif %}">{{ text }}</span>{% else %}<span class="hint">Not given</span>{% endfor %}</td>
+            <td data-label="{{ match.buddy_first }}">{% for text, shared in r.buddy_items %}<span class="tag{% if shared %} tag-shared{% endif %}">{{ text }}</span>{% else %}<span class="hint">Not given</span>{% endfor %}</td>
+            <td class="points" data-label="Points">{{ r.points|pts }}<small> / {{ r.weight|pts }}</small></td>
+          </tr>
+          {% endfor %}
+          </tbody>
+          <tfoot><tr><th scope="row" colspan="3">Total</th><td class="points"><strong>{{ match.score }}</strong><small> / 100</small></td></tr></tfoot>
+        </table>
+      </div>
+      <div class="panel-body">
+        {% if match.excluded %}
+        <p class="hint">Not considered for {{ match.new_first }}: {% for reason, n in match.excluded.items() %}{{ plural(n, "buddy", "buddies") }} {{ reason }}{{ "; " if not loop.last else "." }}{% endfor %}</p>
+        {% endif %}
+        {% if profiles_changed %}
+        <p class="warn">{{ m.icon("warning", "icon-sm") }} A profile changed after this score was calculated. Run matching again to refresh it.</p>
+        {% endif %}
+        <p class="hint">Scored with weights version {{ match.weights_version }} on {{ match.created_at|stamp }}.</p>
+      </div>
+    </section>
+
+    {% if match.status in ("approved", "reassigned") %}
+    <section class="panel" aria-labelledby="checkin-title">
+      <div class="panel-head"><h2 id="checkin-title">Check-ins</h2><span class="hint">Ask both students about two weeks after pairing</span></div>
+      <div class="panel-body stack">
+        {% for who, first in [("new", match.new_first), ("buddy", match.buddy_first)] %}
+          {% set f = feedback|selectattr("respondent", "equalto", who)|first %}
+          <div>
+            <p><strong>{{ first }}</strong> ({{ "new student" if who == "new" else "buddy" }}):
+            {% if f %}rated the pairing <span class="num">{{ f.rating }}/5</span>, met {{ frequencies[f.frequency]|lower }}.{% if f.comment %} <q>{{ f.comment }}</q>{% endif %} <span class="hint">{{ f.submitted_at|ago }}</span>
+            {% else %}<span class="hint">No check-in yet.</span>{% endif %}</p>
+            <div class="actions">
+              <a class="btn btn-secondary btn-small" href="/checkin/{{ match.id }}/{{ who }}">{{ m.icon("chat-circle-dots", "icon-sm") }}Open {{ first }}'s check-in</a>
+              <button class="btn btn-quiet btn-small" type="button" data-copy="/checkin/{{ match.id }}/{{ who }}">{{ m.icon("copy", "icon-sm") }}<span data-copy-label>Copy link</span></button>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+  </div>
+
+  <aside class="stack sticky-side" aria-label="Decision">
+    <section class="panel">
+      <div class="panel-head"><h2>Decision</h2></div>
+      <div class="panel-body stack">
+        {% if match.status == "suggested" %}
+          <form method="post" action="/review/{{ match.id }}/approve">
+            <button class="btn btn-primary btn-block" type="submit">{{ m.icon("check", "icon-sm") }}Approve pairing</button>
+          </form>
+          <details class="disclosure">
+            <summary class="btn btn-secondary btn-block">{{ m.icon("x", "icon-sm") }}Decline</summary>
+            <form class="stack" method="post" action="/review/{{ match.id }}/decline">
+              <div class="field"><label for="decline-reason">Reason (optional)</label>
+                <select id="decline-reason" name="reason"><option value="">No reason given</option>
+                  {% for r in reasons %}<option>{{ r }}</option>{% endfor %}
+                </select>
+              </div>
+              <button class="btn btn-danger" type="submit">Decline this pairing</button>
+              <p class="hint">{{ match.new_first }} goes back to Unmatched, and this pair won't be suggested again.</p>
+            </form>
+          </details>
+        {% elif match.status == "declined" %}
+          <p>This suggestion was declined{% if match.decided_at %} {{ match.decided_at|ago }}{% endif %}{% if match.override_reason %}: {{ match.override_reason|lower }}{% endif %}.</p>
+          {% if replacement %}<a class="btn btn-secondary" href="/review/{{ replacement.id }}">See the pairing that replaced it</a>{% endif %}
+        {% else %}
+          <p>{{ m.match_chip(match.status) }} {{ match.decided_at|ago }}.</p>
+          {% if match.override_reason %}<p class="hint">Reason for the change: {{ match.override_reason }}{% if match.override_note %}. {{ match.override_note }}{% endif %}</p>{% endif %}
+        {% endif %}
+      </div>
+    </section>
+
+    {% if match.status != "declined" %}
+    <section class="panel" id="change" aria-labelledby="change-title">
+      <div class="panel-head"><h2 id="change-title">Choose a different buddy</h2></div>
+      <div class="panel-body">
+        {% if alternatives %}
+        <form class="stack" method="post" action="/review/{{ match.id }}/reassign">
+          <fieldset class="stack">
+            <legend class="hint">Other buddies with room, best first</legend>
+            <ul class="alt-list">
+              {% for a in alternatives %}
+              <li><label class="alt">
+                <input type="radio" name="buddy_id" value="{{ a.id }}" required>
+                <span><span class="alt-name">{{ a.name }}</span> <span class="hint">Grade {{ a.grade }}</span><span class="alt-why">{{ a.headline or "Little in common" }}</span></span>
+                <span class="num">{{ a.score }}</span>
+              </label></li>
+              {% endfor %}
+            </ul>
+          </fieldset>
+          <div class="field"><label for="reason">Reason for the change</label>
+            <select id="reason" name="reason" required><option value="">Choose a reason</option>
+              {% for r in reasons %}<option>{{ r }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="field"><label for="note">Note (optional)</label><textarea id="note" name="note" rows="2" maxlength="300"></textarea></div>
+          <button class="btn btn-secondary" type="submit">{{ m.icon("handshake", "icon-sm") }}Pair with this buddy instead</button>
+          <p class="hint">The change and the reason go in the audit log.</p>
+        </form>
+        {% else %}
+        <p class="muted">No other buddy has room for {{ match.new_first }} right now.</p>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+
+    <p class="hint">{{ m.icon("clock-counter-clockwise", "icon-sm") }} Last updated {{ match.updated_at|ago }}. Matching last run {{ fresh.run.ran_at|ago if fresh.run else "never" }}.</p>
+  </aside>
+</div>
+{% endblock %}

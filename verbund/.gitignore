@@ -1,0 +1,12 @@
+# Student data never goes into git
+data/
+*.db
+*.db-wal
+*.db-shm
+.env
+
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/

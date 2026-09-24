@@ -1,0 +1,7 @@
+{% if flash %}
+<div class="flash" role="status">
+  {{ m.icon("info") }}
+  <p>{{ flash }}</p>
+  <button type="button" data-dismiss aria-label="Close message">{{ m.icon("x", "icon-sm") }}</button>
+</div>
+{% endif %}

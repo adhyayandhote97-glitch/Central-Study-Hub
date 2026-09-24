@@ -1,0 +1,121 @@
+{% extends "plain.html" %}
+{% block title %}Questionnaire for {{ student.first_name }}{% endblock %}
+{% block content %}
+<form class="form-page" method="post" action="/intake/{{ student.id }}" novalidate>
+  <header>
+    <p class="eyebrow">{{ "Finding you a buddy" if student.role == "new" else "Being a buddy" }}</p>
+    <h1>Hi {{ student.first_name }}, {{ "help us find you a buddy." if student.role == "new" else "help us pick who you'll look after." }}</h1>
+    <p class="lede muted">About 2 minutes. There are no right answers, and you can change them later with the same link.</p>
+  </header>
+
+  {% if errors %}
+  <div class="errors" role="alert">
+    <strong>Please fix {{ "this" if errors|length == 1 else "these" }}:</strong>
+    <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+
+  <fieldset>
+    <legend><span class="n">1</span><span class="t">Before you start</span></legend>
+    <div class="consent-box">
+      <p><strong>What we ask for and why</strong></p>
+      <ul>
+        <li>The languages you speak, what you like doing, when you are free, and whether you have been new at a school before.</li>
+        <li>We use it only to suggest a buddy. Teachers make the final choice.</li>
+        <li>Only school staff can see it. A computer program adds up a score; a small AI running on the school's own computer writes a sentence explaining it. Nothing is sent to other companies.</li>
+        <li>We do not ask about nationality, religion or anything similar.</li>
+        <li>Your answers are deleted or made anonymous after the programme ends. You or your parents can ask to see or delete them at any time.</li>
+      </ul>
+    </div>
+    <label class="check-row"><input type="checkbox" name="consent" value="yes"{% if student.consent_at %} checked{% endif %} required> <span>I understand and I agree to share these answers.</span></label>
+    <label class="check-row"><input type="checkbox" name="guardian_told" value="yes"{% if student.consent_at %} checked{% endif %} required> <span>A parent or guardian knows I am filling this in.</span></label>
+  </fieldset>
+
+  <fieldset>
+    <legend><span class="n">2</span><span class="t">Languages you speak</span></legend>
+    <p class="hint">Start with the language you speak at home. The school language is {{ school_language }}.</p>
+    {% set langs = answers.languages.items()|list %}
+    {% for i in range(4) %}
+    {% set pair = langs[i] if i < langs|length else ("", "home" if i == 0 else "fluent") %}
+    <div class="lang-row">
+      <div class="field">
+        <label for="language_{{ i }}">{{ "Language" if i == 0 else "Another language" }}{% if i > 0 %} <span class="hint">(optional)</span>{% endif %}</label>
+        <input id="language_{{ i }}" name="language_{{ i }}" type="text" autocomplete="off" value="{{ pair[0] }}">
+      </div>
+      <div class="field">
+        <label for="level_{{ i }}">How well</label>
+        <select id="level_{{ i }}" name="level_{{ i }}">
+          {% for lvl, text in [("home", "At home"), ("fluent", "Fluent"), ("learning", "Learning")] %}
+          <option value="{{ lvl }}"{% if pair[1] == lvl %} selected{% endif %}>{{ text }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    {% endfor %}
+  </fieldset>
+
+  <fieldset>
+    <legend><span class="n">3</span><span class="t">Things you like doing</span></legend>
+    <p class="hint">Pick as many as you like.</p>
+    <div class="choice-grid">
+      {% for option in interest_options %}
+      <label class="choice"><input type="checkbox" name="interests" value="{{ option }}"{% if option in answers.interests %} checked{% endif %}> {{ option }}</label>
+      {% endfor %}
+    </div>
+    <div class="field"><label for="other_interest">Something else? <span class="hint">(optional)</span></label>
+      <input id="other_interest" name="other_interest" type="text" placeholder="e.g. Skateboarding; Baking" value="{{ answers.other_interest }}">
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend><span class="n">4</span><span class="t">When are you usually free?</span></legend>
+    <p class="hint">Buddies who can actually meet get on best, so this counts for the most. Tick every time that works.</p>
+    <div class="slot-scroll">
+      <table class="slot-grid">
+        <caption class="sr-only">Free times by day and part of the school day</caption>
+        <thead><tr><td></td>{% for day in DAYS %}<th scope="col">{{ day }}</th>{% endfor %}</tr></thead>
+        <tbody>
+        {% for period in PERIODS %}
+        <tr>
+          <th scope="row">{{ period }}</th>
+          {% for day in DAYS %}{% set slot = day ~ " · " ~ period %}
+          <td><label><input type="checkbox" name="availability" value="{{ slot }}"{% if slot in answers.availability %} checked{% endif %}><span class="sr-only">{{ slot|slot_words }}</span><span class="sr-state" aria-hidden="true"></span></label></td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend><span class="n">5</span><span class="t">A bit about you</span></legend>
+    <div class="field">
+      <span class="label" id="been-new-label">Have you ever been the new student at a school?</span>
+      <div class="choice-grid" role="radiogroup" aria-labelledby="been-new-label">
+        <label class="choice"><input type="radio" name="been_new_before" value="yes"{% if answers.been_new_before == true %} checked{% endif %}> Yes</label>
+        <label class="choice"><input type="radio" name="been_new_before" value="no"{% if answers.been_new_before == false %} checked{% endif %}> No</label>
+      </div>
+    </div>
+    {% if student.role == "buddy" %}
+    <div class="field">
+      <span class="label" id="willing-label">Would you like to be a buddy this term?</span>
+      <div class="choice-grid" role="radiogroup" aria-labelledby="willing-label">
+        <label class="choice"><input type="radio" name="willing" value="yes"{% if answers.willing %} checked{% endif %}> Yes</label>
+        <label class="choice"><input type="radio" name="willing" value="no"{% if not answers.willing %} checked{% endif %}> Not this term</label>
+      </div>
+    </div>
+    <div class="field">
+      <label for="capacity">How many new students could you look after?</label>
+      <select id="capacity" name="capacity">
+        {% for n in [1, 2, 3] %}<option value="{{ n }}"{% if answers.capacity == n %} selected{% endif %}>{{ n }}</option>{% endfor %}
+      </select>
+    </div>
+    {% endif %}
+  </fieldset>
+
+  <div class="actions">
+    <button class="btn btn-primary" type="submit">Send my answers {{ m.icon("arrow-right", "icon-sm") }}</button>
+  </div>
+</form>
+{% endblock %}

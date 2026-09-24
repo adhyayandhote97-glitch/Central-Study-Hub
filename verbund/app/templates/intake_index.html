@@ -1,0 +1,27 @@
+{% extends "plain.html" %}
+{% block title %}Student questionnaire{% endblock %}
+{% block topnav %}<nav aria-label="Pages"><a href="/students">Back to Students</a></nav>{% endblock %}
+{% block content %}
+<div class="form-page">
+  <header>
+    <p class="eyebrow">Student questionnaire</p>
+    <h1>Whose questionnaire is this?</h1>
+    <p class="lede muted">In a school, each student opens their own link from their teacher. In this version, pick a name to open that student's questionnaire.</p>
+  </header>
+  <div class="panel table-wrap">
+    <table class="table">
+      <caption class="sr-only">Students and questionnaire status</caption>
+      <thead><tr><th scope="col">Student</th><th scope="col">Role</th><th scope="col">Questionnaire</th></tr></thead>
+      <tbody>
+      {% for s in students %}
+        <tr>
+          <td class="name-cell"><a href="/intake/{{ s.id }}">{{ s.name }}</a><span class="sub">Grade {{ s.grade }}{% if s.homeroom %}, {{ s.homeroom }}{% endif %}</span></td>
+          <td>{{ "New student" if s.role == "new" else "Buddy" }}</td>
+          <td>{% if s.intake_completed_at %}{{ m.chip("matched", "Done") }}{% else %}{{ m.chip("unmatched", "Not done yet") }}{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

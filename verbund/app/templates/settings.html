@@ -1,0 +1,125 @@
+{% extends "staff.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="titles">
+    <p class="eyebrow">Settings</p>
+    <h1>Settings</h1>
+    <p class="lede">How the score is weighted, school details, the local AI, and what Verbund stores.</p>
+  </div>
+</div>
+
+<nav class="tabs" aria-label="Sections">
+  <a href="#weights">Weights</a><a href="#school">School</a><a href="#ai">Local AI</a><a href="#privacy">Privacy and data</a><a href="#audit">Audit log</a>
+</nav>
+
+<div class="split">
+  <div class="stack">
+    <section class="panel" id="weights" aria-labelledby="weights-title">
+      <div class="panel-head"><h2 id="weights-title">Weights</h2><span class="hint">Version {{ weights_version }}</span></div>
+      <form class="panel-body stack" method="post" action="/settings/weights" data-weights>
+        <p class="muted">Points each factor is worth. They must add up to 100. Saving creates a new version; existing suggestions keep the version they were scored with.</p>
+        <div class="form-grid">
+          {% for key, label in FACTORS %}
+          <div class="field">
+            <label for="w-{{ key }}"><i class="swatch f-{{ key }}"></i> {{ label }}</label>
+            <input id="w-{{ key }}" name="{{ key }}" type="number" min="0" max="60" step="1" inputmode="numeric" value="{{ weights[key]|int }}">
+            <span class="help">Default {{ defaults[key] }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        <p class="status-line">Total: <span class="num" data-weights-total>{{ weights.values()|sum|int }}</span> / 100</p>
+        <div class="actions">
+          <button class="btn btn-primary" type="submit" data-weights-save>Save weights</button>
+          <button class="btn btn-quiet" type="submit" name="reset" value="1">Reset to defaults</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel" id="school" aria-labelledby="school-title">
+      <div class="panel-head"><h2 id="school-title">School</h2></div>
+      <form class="panel-body stack" method="post" action="/settings/school">
+        <div class="form-grid">
+          <div class="field"><label for="school_language">School language</label>
+            <input id="school_language" name="school_language" type="text" value="{{ school_language }}">
+            <span class="help">Sharing only this language earns fewer language points, because nearly everyone shares it.</span>
+          </div>
+          <div class="field"><label for="retention_days">Keep personal data for (days)</label>
+            <input id="retention_days" name="retention_days" type="number" min="30" max="3650" value="{{ retention_days }}">
+          </div>
+          <div class="field full"><label for="interest_options">Interests students can pick</label>
+            <textarea id="interest_options" name="interest_options" rows="3">{{ interest_options|join("; ") }}</textarea>
+            <span class="help">Separate with semicolons.</span>
+          </div>
+        </div>
+        <div class="actions"><button class="btn btn-secondary" type="submit">Save school settings</button></div>
+      </form>
+    </section>
+
+    <section class="panel" id="audit" aria-labelledby="audit-title">
+      <div class="panel-head"><h2 id="audit-title">Audit log</h2><span class="hint">Latest {{ audit|length }} actions</span></div>
+      <div class="table-wrap">
+        <table class="table">
+          <caption class="sr-only">Audit log</caption>
+          <thead><tr><th scope="col">When</th><th scope="col">Action</th><th scope="col">Record</th><th scope="col">Detail</th></tr></thead>
+          <tbody>
+          {% for a in audit %}
+            <tr>
+              <td class="hint">{{ a.at|stamp }}</td>
+              <td>{{ a.action }}</td>
+              <td>{% if a.entity == "student" and a.entity_id %}<a href="/students?open={{ a.entity_id }}">Student {{ a.entity_id }}</a>{% elif a.entity == "match" and a.entity_id %}<a href="/review/{{ a.entity_id }}">Pairing {{ a.entity_id }}</a>{% else %}{{ a.entity or "" }}{% endif %}</td>
+              <td class="clip" title="{{ a.detail or '' }}">{{ a.detail or "" }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="panel" id="ai" aria-labelledby="ai-title">
+      <div class="panel-head"><h2 id="ai-title">Local AI</h2></div>
+      <div class="panel-body stack">
+        {% if not ollama.enabled %}
+          <p class="status-line warn">{{ m.icon("warning") }} Turned off (OLLAMA_ENABLED=0)</p>
+        {% elif ollama.reachable and ollama.model_installed %}
+          <p class="status-line ok">{{ m.icon("check") }} Ollama is running and {{ ollama.model }} is ready</p>
+        {% elif ollama.reachable %}
+          <p class="status-line warn">{{ m.icon("warning") }} Ollama is running, but {{ ollama.model }} is not downloaded</p>
+          <p class="hint">In a terminal, run:</p><pre class="code">ollama pull {{ ollama.model }}</pre>
+        {% else %}
+          <p class="status-line warn">{{ m.icon("warning") }} Ollama is not running</p>
+          <p class="hint">Explanations use the summary template until it is. Everything else works.</p>
+        {% endif %}
+        <dl class="kv">
+          <dt>Address</dt><dd><code>{{ ollama.url }}</code></dd>
+          <dt>Model</dt><dd><code>{{ ollama.model }}</code></dd>
+          {% if ollama.models %}<dt>Downloaded</dt><dd>{{ ollama.models|join(", ") }}</dd>{% endif %}
+        </dl>
+        <p class="hint">The AI only writes the explanation. The weighted algorithm makes every suggestion, and it runs the same with or without the AI. Setup steps are in <code>verbund/docs/OLLAMA_SETUP.md</code>.</p>
+      </div>
+    </section>
+
+    <section class="panel" id="privacy" aria-labelledby="privacy-title">
+      <div class="panel-head"><h2 id="privacy-title">Privacy and data</h2>{{ m.icon("shield-check") }}</div>
+      <div class="panel-body stack">
+        <dl class="kv">
+          <dt>Students</dt><dd>{{ counts.students }} ({{ counts.anonymised }} anonymised)</dd>
+          <dt>Pairings</dt><dd>{{ counts.matches }}</dd>
+          <dt>Check-ins</dt><dd>{{ counts.feedback }}</dd>
+        </dl>
+        <p class="hint"><strong>Stored:</strong> name, grade, homeroom, languages, clubs, interests, free times, whether the student has been new before, consent date, pairings and check-ins.
+          <strong>Never collected:</strong> nationality, gender, religion or ethnicity. All data stays in one SQLite file on this computer.</p>
+        <form method="post" action="/settings/purge" data-confirm="Anonymise every student record not updated for {{ retention_days }} days?">
+          <button class="btn btn-secondary" type="submit">Anonymise old records</button>
+          <p class="hint">Removes names and personal details from students not updated for {{ retention_days }} days. Scores and ratings stay, without names.</p>
+        </form>
+        <form method="post" action="/settings/reset-demo" data-confirm="Replace all data with the demo data? Everything you added will be lost.">
+          <button class="btn btn-danger" type="submit">Restore demo data</button>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

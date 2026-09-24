@@ -12,6 +12,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "emulators"],
       "port": 4000
+    },
+    {
+      "name": "verbund",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["verbund/run.sh", "--reload"],
+      "port": 8000
     }
   ]
 }

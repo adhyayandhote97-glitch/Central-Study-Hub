@@ -1,0 +1,113 @@
+{% extends "staff.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="hero-row">
+  <span class="headline-number num-display" aria-hidden="true">{{ stats.need_buddy }}</span>
+  <div class="hero-text">
+    <p class="eyebrow">Dashboard</p>
+    <h1><span class="sr-only">{{ stats.need_buddy }} </span>{% if stats.need_buddy == 1 %}new student still needs{% else %}new students still need{% endif %} a confirmed buddy</h1>
+    <p class="muted">
+      {% if stats.awaiting_review %}{{ plural(stats.awaiting_review, "suggestion") }} {{ "is" if stats.awaiting_review == 1 else "are" }} waiting for your review.
+      {% elif stats.need_buddy %}Run matching to suggest a buddy for each of them.
+      {% else %}Everyone has a buddy. New arrivals will appear here.{% endif %}
+    </p>
+  </div>
+  <div class="actions">
+    {% if stats.awaiting_review %}
+      <a class="btn btn-primary" href="/review">Review suggestions {{ m.icon("arrow-right", "icon-sm") }}</a>
+    {% elif stats.need_buddy %}
+      <form method="post" action="/matching/run"><button class="btn btn-primary" type="submit">{{ m.icon("arrows-clockwise", "icon-sm") }}Run matching</button></form>
+    {% else %}
+      <a class="btn btn-secondary" href="/students?add=1">{{ m.icon("user-plus", "icon-sm") }}Add a new student</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="stat-strip">
+  <div class="stat"><div class="value">{{ stats.approved_unedited_pct if stats.approved_unedited_pct is not none else "–" }}{% if stats.approved_unedited_pct is not none %}%{% endif %}</div><div class="label">of confirmed pairs approved without changes</div></div>
+  <div class="stat"><div class="value">{{ stats.flagged }}</div><div class="label">flagged for a closer look</div></div>
+  <div class="stat"><div class="value">{{ stats.checked_in }}<span class="hint"> / {{ stats.confirmed_pairs }}</span></div><div class="label">confirmed pairs have checked in</div></div>
+  <div class="stat"><div class="value">{{ stats.new_total }}</div><div class="label">new students this year</div></div>
+</div>
+
+{% set show_run = stats.awaiting_review > 0 %}
+{% include "partials/freshness.html" %}
+
+<div class="split">
+  <div class="stack">
+    <section class="panel" aria-labelledby="pending-title">
+      <div class="panel-head">
+        <h2 id="pending-title">Waiting for review</h2>
+        <a href="/matching">All suggestions</a>
+      </div>
+      {% if pending %}
+      <ul class="pair-list compact">
+        {% for p in pending %}{{ m.pair_row(p) }}{% endfor %}
+      </ul>
+      <div class="panel-body">{{ m.legend() }}</div>
+      {% else %}
+      <div class="empty">
+        <h3>Nothing to review</h3>
+        <p class="muted">{% if stats.need_buddy %}Run matching to create suggestions for the {{ plural(stats.need_buddy, "new student") }} without a buddy.{% else %}All suggestions have been reviewed.{% endif %}</p>
+      </div>
+      {% endif %}
+    </section>
+
+    {% if unplaced %}
+    <section class="panel" aria-labelledby="unplaced-title">
+      <div class="panel-head"><h2 id="unplaced-title">No buddy suggested</h2><span class="hint">{{ plural(unplaced|length, "student") }}</span></div>
+      <ul class="activity panel-body">
+        {% for u in unplaced %}
+        <li>
+          <span><a href="/students?open={{ u.id }}"><strong>{{ u.name }}</strong></a>, Grade {{ u.grade }}.
+            {% if u.open %}{{ plural(u.open, "buddy", "buddies") }} still available. Run matching again.{% else %}No buddy is available:
+            {% for reason, n in u.excluded.items() %}{{ n }} {{ reason }}{{ ", " if not loop.last else "." }}{% endfor %}{% endif %}</span>
+          <a class="btn btn-secondary btn-small" href="/students?open={{ u.id }}">Open</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+  </div>
+
+  <div class="stack">
+    <section class="panel" aria-labelledby="insight-title">
+      <div class="panel-head"><h2 id="insight-title">What's working</h2>{{ m.icon("chart-bar") }}</div>
+      <div class="panel-body">
+        {% if insights.ready %}
+        <p class="hint">Average check-in rating (1–5) for pairs that were strong on each factor, compared with pairs that were weak on it. Based on {{ plural(insights.responses, "check-in") }} from {{ plural(insights.pairs, "pair") }}.</p>
+        {% for row in insights.rows[:4] %}
+        <div class="insight-row">
+          <strong>{{ row.label }}</strong>
+          <div class="pair-bars">
+            <span>Strong ({{ row.high_n }})</span>
+            <span class="bar"><svg viewBox="0 0 5 1" preserveAspectRatio="none" aria-hidden="true"><rect class="hi" x="0" y="0" width="{{ row.high_avg }}" height="1"></rect></svg></span>
+            <span class="num">{{ row.high_avg }}</span>
+            <span>Weak ({{ row.low_n }})</span>
+            <span class="bar"><svg viewBox="0 0 5 1" preserveAspectRatio="none" aria-hidden="true"><rect class="lo" x="0" y="0" width="{{ row.low_avg }}" height="1"></rect></svg></span>
+            <span class="num">{{ row.low_avg }}</span>
+          </div>
+        </div>
+        {% endfor %}
+        {% if insights.rows and insights.rows[0].difference >= 1 %}
+        <p class="hint">Pairs that were strong on <strong>{{ insights.rows[0].label|lower }}</strong> rated their pairing {{ insights.rows[0].difference }} points higher. If this keeps happening, consider giving it more weight in <a href="/settings#weights">Settings</a>.</p>
+        {% endif %}
+        {% else %}
+        <p class="muted">This panel needs at least {{ insights.needed }} check-ins. So far: {{ insights.responses }}.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="activity-title">
+      <div class="panel-head"><h2 id="activity-title">Recent activity</h2><a href="/settings#audit">Full log</a></div>
+      <ul class="activity panel-body">
+        {% for a in activity %}
+        <li><span>{{ a.action }}{% if a.detail %}<span class="hint">. {{ a.detail }}</span>{% endif %}</span><span class="when">{{ a.at|ago }}</span></li>
+        {% else %}
+        <li><span class="muted">Nothing yet.</span></li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+</div>
+{% endblock %}

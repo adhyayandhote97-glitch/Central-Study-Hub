@@ -1,0 +1,55 @@
+{% extends "plain.html" %}
+{% set me = match.new_first if respondent == "new" else match.buddy_first %}
+{% set other = match.buddy_first if respondent == "new" else match.new_first %}
+{% block title %}Check-in for {{ me }}{% endblock %}
+{% block content %}
+{% set me = match.new_first if respondent == "new" else match.buddy_first %}
+{% set other = match.buddy_first if respondent == "new" else match.new_first %}
+{% if done %}
+<div class="form-page">
+  <div class="panel done">
+    <p class="eyebrow">Check-in sent</p>
+    <h1>Thanks, {{ me }}.</h1>
+    <p class="muted">Your answers help teachers make better pairings for the next new students.</p>
+    <div class="actions"><a class="btn btn-quiet" href="/review/{{ match.id }}">Staff: back to this pairing</a></div>
+  </div>
+</div>
+{% else %}
+<form class="form-page" method="post" action="/checkin/{{ match.id }}/{{ respondent }}">
+  <header>
+    <p class="eyebrow">Two-week check-in</p>
+    <h1>Hi {{ me }}, how is it going with {{ other }}?</h1>
+    <p class="lede muted">Three quick questions. Only school staff see your answers.</p>
+  </header>
+  {% if error %}<div class="errors" role="alert">{{ error }}</div>{% endif %}
+
+  <fieldset>
+    <legend><span class="n">1</span><span class="t">How often have you met or talked?</span></legend>
+    <div class="choice-grid">
+      {% for key, label in frequencies.items() %}
+      <label class="choice"><input type="radio" name="frequency" value="{{ key }}"{% if existing and existing.frequency == key %} checked{% endif %} required> {{ label }}</label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend><span class="n">2</span><span class="t">How helpful has the pairing been?</span></legend>
+    <p class="hint">1 = not at all, 5 = very helpful</p>
+    <div class="rating">
+      {% for n in range(1, 6) %}
+      <label class="choice"><input type="radio" name="rating" value="{{ n }}"{% if existing and existing.rating == n %} checked{% endif %} required> {{ n }}</label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend><span class="n">3</span><span class="t">Anything else? <span class="hint">(optional)</span></span></legend>
+    <div class="field"><label class="sr-only" for="comment">Comment</label>
+      <textarea id="comment" name="comment" maxlength="500" placeholder="What has helped, or what would help?">{{ existing.comment if existing and existing.comment else "" }}</textarea>
+    </div>
+  </fieldset>
+
+  <div class="actions"><button class="btn btn-primary" type="submit">Send check-in</button></div>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "plain.html" %}
+{% block title %}{{ code }}{% endblock %}
+{% block content %}
+<div class="form-page">
+  <div class="panel done">
+    <p class="eyebrow">Error {{ code }}</p>
+    <h1>{{ message }}</h1>
+    <div class="actions"><a class="btn btn-secondary" href="/dashboard">Go to the dashboard</a></div>
+  </div>
+</div>
+{% endblock %}

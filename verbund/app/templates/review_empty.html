@@ -1,0 +1,23 @@
+{% extends "staff.html" %}
+{% block title %}Review{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="titles">
+    <p class="eyebrow">Review</p>
+    <h1>Nothing waiting for review</h1>
+    <p class="lede">Every suggestion has a decision. Run matching when new students arrive, or open any pairing below to see its breakdown or change the buddy.</p>
+  </div>
+  <div class="actions">
+    <form method="post" action="/matching/run"><button class="btn btn-primary" type="submit">{{ m.icon("arrows-clockwise", "icon-sm") }}Run matching</button></form>
+  </div>
+</div>
+{% if recent %}
+<section class="panel" aria-labelledby="all-title">
+  <div class="panel-head"><h2 id="all-title">Confirmed pairings</h2><span class="hint">{{ plural(recent|length, "pair") }}</span></div>
+  <ul class="pair-list compact">
+    {% for p in recent %}{{ m.pair_row(p, show_approve=false) }}{% endfor %}
+  </ul>
+  <div class="panel-body">{{ m.legend() }}</div>
+</section>
+{% endif %}
+{% endblock %}

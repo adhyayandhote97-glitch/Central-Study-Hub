@@ -1,0 +1,174 @@
+/* Verbund design tokens.
+   Design 3 palette (Sienna, Rusty Brown, Dusty Rose, Floral White) with the
+   rules in docs/DESIGN_SYSTEM.md. Components use these tokens only; no raw
+   colours appear in app.css. */
+
+@font-face {
+  font-family: "Newsreader";
+  src: url("../fonts/newsreader-var.woff2") format("woff2");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Newsreader";
+  src: url("../fonts/newsreader-var-italic.woff2") format("woff2");
+  font-weight: 200 800;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  src: url("../fonts/atkinson-hyperlegible-next-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  src: url("../fonts/atkinson-hyperlegible-next-latin-400-italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  src: url("../fonts/atkinson-hyperlegible-next-latin-700-normal.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Atkinson Hyperlegible Mono";
+  src: url("../fonts/atkinson-hyperlegible-mono-latin-500-normal.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+
+  /* Ground and ink */
+  --paper: #fffaf0;        /* Floral White */
+  --surface: #ffffff;
+  --sunken: #f6ede3;
+  --ink: #2a1d17;
+  --ink-2: #5e4a40;        /* secondary text, 7.9:1 on paper */
+  --ink-3: #74625a;        /* labels and hints, 5.6:1 on paper */
+  --line: #e3d2c2;
+  --line-strong: #c9b19c;
+  --control-border: #9a8272; /* form controls, 3.6:1 on white (WCAG 1.4.11) */
+
+  /* Brand */
+  --sienna: #a0522d;       /* primary actions, 5.6:1 on paper */
+  --sienna-hover: #7a3a1e; /* Rusty Brown */
+  --on-sienna: #fffaf0;
+  --rose: #c9918a;         /* Dusty Rose */
+  --rose-tint: #f6e3df;    /* highlight for shared traits */
+  --rose-ink: #7e3f39;
+
+  /* Status (always shown with a text label) */
+  --moss: #3d6848;   --moss-tint: #e4eee4;
+  --plum: #7d4760;   --plum-tint: #f2e3ea;
+  --stone: #6b5f57;  --stone-tint: #efe7df;
+  --rust: #9a3b1c;   --rust-tint: #f8e1d6;
+  --ochre: #7f5b0c;  --ochre-tint: #f7ebc9;
+
+  /* Score-bar factor colours: validated with the dataviz palette checker
+     (CVD separation and contrast) in this order, light and dark. */
+  --f-availability: #2a6db3;
+  --f-interests: #c0602e;
+  --f-language: #00928a;
+  --f-been_new: #6a5bb0;
+  --f-grade: #b08a10;
+  --f-clubs: #b04a7e;
+
+  --focus: #a0522d;
+
+  /* Type */
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-body: "Atkinson Hyperlegible Next", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, "Cascadia Mono", monospace;
+  --text-hero: clamp(2.25rem, 1.6rem + 2.6vw, 3.25rem);
+  --text-h1: clamp(2rem, 1.6rem + 1.6vw, 3rem);
+  --text-h2: 1.75rem;
+  --text-h3: 1.3rem;
+  --text-body: 1.0625rem;
+  --text-small: 0.9375rem;
+  --text-tiny: 0.8125rem;
+
+  /* Space (4px base) */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px;
+
+  --radius-control: 4px;
+  --radius-panel: 6px;
+  --row-height: 52px;
+  --sidebar-width: 240px;
+  --content-max: 1120px;
+}
+
+/* Dark mode: its own steps, not an automatic flip. Applies when the viewer's
+   system is dark (unless they chose light), or when they chose dark. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #1c1512;
+    --surface: #251c18;
+    --sunken: #150f0d;
+    --ink: #f5ebdd;
+    --ink-2: #cdbcaa;
+    --ink-3: #a8958a;
+    --line: #3d2e27;
+    --line-strong: #5a453a;
+    --control-border: #8a7162;
+    --sienna: #d98a62;
+    --sienna-hover: #eaa27c;
+    --on-sienna: #1c1512;
+    --rose: #d7a8a1;
+    --rose-tint: #4a2c2a;
+    --rose-ink: #f1c9c3;
+    --moss: #8fc29b;   --moss-tint: #1f3326;
+    --plum: #d59ab5;   --plum-tint: #3a2230;
+    --stone: #b8aba1;  --stone-tint: #2e2521;
+    --rust: #f0916b;   --rust-tint: #40221a;
+    --ochre: #e0b95a;  --ochre-tint: #3a2e12;
+    --f-availability: #4f95dd;
+    --f-interests: #cf7445;
+    --f-language: #00a396;
+    --f-been_new: #8f82dd;
+    --f-grade: #b08a20;
+    --f-clubs: #c8619a;
+    --focus: #eaa27c;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #1c1512;
+  --surface: #251c18;
+  --sunken: #150f0d;
+  --ink: #f5ebdd;
+  --ink-2: #cdbcaa;
+  --ink-3: #a8958a;
+  --line: #3d2e27;
+  --line-strong: #5a453a;
+  --control-border: #8a7162;
+  --sienna: #d98a62;
+  --sienna-hover: #eaa27c;
+  --on-sienna: #1c1512;
+  --rose: #d7a8a1;
+  --rose-tint: #4a2c2a;
+  --rose-ink: #f1c9c3;
+  --moss: #8fc29b;   --moss-tint: #1f3326;
+  --plum: #d59ab5;   --plum-tint: #3a2230;
+  --stone: #b8aba1;  --stone-tint: #2e2521;
+  --rust: #f0916b;   --rust-tint: #40221a;
+  --ochre: #e0b95a;  --ochre-tint: #3a2e12;
+  --f-availability: #4f95dd;
+  --f-interests: #cf7445;
+  --f-language: #00a396;
+  --f-been_new: #8f82dd;
+  --f-grade: #b08a20;
+  --f-clubs: #c8619a;
+  --focus: #eaa27c;
+}

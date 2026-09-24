@@ -1,0 +1,10 @@
+{% extends "layout.html" %}
+{% block body %}
+<header class="plain-top">
+  <a class="brand" href="/"><span class="brand-word">Verbund</span></a>
+  {% block topnav %}{% endblock %}
+</header>
+<main id="main">
+  {% block content %}{% endblock %}
+</main>
+{% endblock %}

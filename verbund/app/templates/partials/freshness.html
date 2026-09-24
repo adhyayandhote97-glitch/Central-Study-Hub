@@ -1,0 +1,14 @@
+<div class="freshness" aria-label="Last updated">
+  <span class="item">{{ m.icon("clock-counter-clockwise", "icon-sm") }}
+    {% if fresh.run %}Matching last run <strong>{{ fresh.run.ran_at|ago }}</strong> <span class="hint">({{ fresh.run.ran_at|stamp }})</span>{% else %}Matching has not run yet{% endif %}
+  </span>
+  <span class="item">Student data last changed {{ fresh.synced_at|ago }}</span>
+  {% if fresh.run and fresh.changed_since_run %}
+  <span class="item stale">{{ m.icon("warning", "icon-sm") }}{{ plural(fresh.changed_since_run, "profile") }} changed since the last run</span>
+  {% endif %}
+  {% if show_run %}
+  <form method="post" action="/matching/run">
+    <button class="btn btn-secondary btn-small" type="submit">{{ m.icon("arrows-clockwise", "icon-sm") }}Run matching again</button>
+  </form>
+  {% endif %}
+</div>

@@ -1,0 +1,50 @@
+{% extends "plain.html" %}
+{% block title %}Buddy matching for new students{% endblock %}
+{% block topnav %}
+<nav aria-label="Pages">
+  {% for key, label, href, icon_name in NAV %}<a href="{{ href }}">{{ label }}</a>{% endfor %}
+  <a href="/settings">Settings</a>
+  <a href="/intake">Student questionnaire</a>
+</nav>
+{% endblock %}
+{% block content %}
+<div class="home">
+  <section class="intro">
+    <p class="eyebrow">Buddy matching for international schools</p>
+    <h1>Every new student gets a buddy, <em>and the reasons why.</em></h1>
+    <p class="lede">Verbund scores every possible pairing on free time, interests, language, grade, clubs and whether the
+      buddy has been new before. Teachers see the score and the reasons, and the final decision is always theirs.</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="/dashboard">Open the dashboard {{ m.icon("arrow-right", "icon-sm") }}</a>
+      <a class="btn btn-secondary" href="/intake">Open a student questionnaire</a>
+    </div>
+    <ol class="path" aria-label="How it works">
+      <li><a href="/students"><span class="step">1</span><span class="what"><strong>Students</strong><span>Add new students and buddies, or import a CSV the school already has.</span></span><span class="go">{{ m.icon("arrow-right") }}</span></a></li>
+      <li><a href="/matching"><span class="step">2</span><span class="what"><strong>Matching</strong><span>Suggest a buddy for every new student at once{% if stats.need_buddy %} ({{ stats.need_buddy }} waiting now){% endif %}.</span></span><span class="go">{{ m.icon("arrow-right") }}</span></a></li>
+      <li><a href="/review"><span class="step">3</span><span class="what"><strong>Review</strong><span>Check each pair's score and reasons, then approve, decline or pick someone else.</span></span><span class="go">{{ m.icon("arrow-right") }}</span></a></li>
+      <li><a href="/dashboard"><span class="step">4</span><span class="what"><strong>Dashboard</strong><span>See who still needs a buddy and how last term's pairs went.</span></span><span class="go">{{ m.icon("arrow-right") }}</span></a></li>
+    </ol>
+  </section>
+
+  <section class="panel example-card" aria-labelledby="example-title">
+    {% if example %}
+    <div class="example-label">
+      <p class="eyebrow" id="example-title">A real pairing from this school's data</p>
+      {{ m.match_chip(example.status) }}
+    </div>
+    <div class="score">
+      <span class="big-score">{{ example.score }}<small>/100</small></span>
+    </div>
+    <h2>{{ example.new_name }} <span class="muted">and</span> {{ example.buddy_name }}</h2>
+    {{ m.scorebar(example.factors, example.score, large=true) }}
+    {{ m.legend() }}
+    <div class="why-box"><p>{{ example.explanation }}</p></div>
+    <a class="btn btn-secondary" href="/review/{{ example.id }}">See the full breakdown</a>
+    {% else %}
+    <p class="eyebrow" id="example-title">No pairings yet</p>
+    <p>Run matching and a real pairing from your data will appear here.</p>
+    <a class="btn btn-secondary" href="/matching">Go to Matching</a>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

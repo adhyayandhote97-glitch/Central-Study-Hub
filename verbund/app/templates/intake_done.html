@@ -1,0 +1,15 @@
+{% extends "plain.html" %}
+{% block title %}Thank you{% endblock %}
+{% block content %}
+<div class="form-page">
+  <div class="panel done">
+    <p class="eyebrow">Questionnaire sent</p>
+    <h1>Thanks, {{ student.first_name }}.</h1>
+    <p class="muted">{% if student.role == "new" %}A teacher will use your answers to find you a buddy, usually within a few days. You can change your answers any time using the same link.{% else %}Your answers help teachers pick the right new student for you. You can change them any time using the same link.{% endif %}</p>
+    <div class="actions">
+      <a class="btn btn-secondary" href="/intake/{{ student.id }}">Change my answers</a>
+      <a class="btn btn-quiet" href="/students?open={{ student.id }}">Staff: back to {{ student.first_name }}'s profile</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

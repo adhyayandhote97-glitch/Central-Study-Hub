@@ -1,0 +1,155 @@
+{% extends "staff.html" %}
+{% block title %}Students{% endblock %}
+{% set qs = filters|urlencode %}
+{% block content %}
+<div class="page-head">
+  <div class="titles">
+    <p class="eyebrow">Students</p>
+    <h1>Students</h1>
+    <p class="lede">{{ plural(students|length, "student") }} shown. Status updates as soon as a pairing is suggested, approved or changed.</p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-primary" href="/students?add=1&amp;{{ qs }}">{{ m.icon("user-plus", "icon-sm") }}Add student</a>
+    <a class="btn btn-secondary" href="/students/export.csv?{{ qs }}">{{ m.icon("download-simple", "icon-sm") }}Export CSV</a>
+  </div>
+</div>
+
+<details class="disclosure" {% if not students %}open{% endif %}>
+  <summary class="btn btn-quiet">{{ m.icon("upload-simple", "icon-sm") }}Import students from a CSV file</summary>
+  <form class="import-box" method="post" action="/students/import" enctype="multipart/form-data">
+    <p class="hint">Use data the school already holds: <code>first_name, last_name, grade, homeroom, role, languages, clubs, capacity</code>. Role is <code>new</code> or <code>buddy</code>.</p>
+    <div class="field"><label for="file">CSV file</label><input id="file" name="file" type="file" accept=".csv,text/csv" required></div>
+    <div class="actions">
+      <button class="btn btn-secondary" type="submit">Import</button>
+      <a class="btn btn-quiet" href="/students/template.csv">Download a template</a>
+    </div>
+  </form>
+</details>
+
+<form class="filters" method="get" action="/students" data-autosubmit role="search">
+  <div class="field field-search"><label for="q">Search</label>
+    <input id="q" name="q" type="search" placeholder="Name, homeroom, language, club…" value="{{ filters.q }}" data-keep-focus>
+  </div>
+  <div class="field"><label for="f-grade">Grade</label>
+    <select id="f-grade" name="grade"><option value="">All grades</option>
+      {% for g in grades %}<option value="{{ g }}"{% if filters.grade == g|string %} selected{% endif %}>Grade {{ g }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field"><label for="f-role">Role</label>
+    <select id="f-role" name="role"><option value="">Everyone</option>
+      <option value="new"{% if filters.role == 'new' %} selected{% endif %}>New students</option>
+      <option value="buddy"{% if filters.role == 'buddy' %} selected{% endif %}>Buddies</option>
+    </select>
+  </div>
+  <div class="field"><label for="f-status">Status</label>
+    <select id="f-status" name="status"><option value="">Any status</option>
+      {% for key, label in statuses.items() %}<option value="{{ key }}"{% if filters.status == key %} selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </div>
+  <button class="btn btn-secondary apply" type="submit">Apply</button>
+</form>
+
+<div class="panel table-wrap">
+  <table class="table">
+    <caption class="sr-only">Students</caption>
+    <thead><tr>
+      <th scope="col">Name</th><th scope="col">Grade</th><th scope="col">Role</th><th scope="col">Languages</th>
+      <th scope="col">Clubs</th><th scope="col">Status</th><th scope="col">Questionnaire</th>
+    </tr></thead>
+    <tbody>
+    {% for s in students %}
+      <tr{% if selected and selected.id == s.id %} class="is-selected"{% endif %}>
+        <td class="name-cell"><a href="/students?open={{ s.id }}&amp;{{ qs }}">{{ s.name }}</a>{% if s.homeroom %}<span class="sub">{{ s.homeroom }}</span>{% endif %}</td>
+        <td class="num">{{ s.grade }}</td>
+        <td>{{ "New" if s.role == "new" else "Buddy" }}</td>
+        <td class="clip" title="{{ s.language_text }}">{{ s.languages|join(", ") or "—" }}</td>
+        <td class="clip" title="{{ s.clubs|join(', ') }}">{{ s.clubs|join(", ") or "—" }}</td>
+        <td>{{ m.chip(s.status, s.status_label) }}
+          {% if s.partner %}<span class="sub">with {{ s.partner }}</span>{% elif s.role == 'buddy' and s.willing %}<span class="sub">{{ s.places_used }} of {{ s.capacity }} places used</span>{% endif %}
+        </td>
+        <td>{% if s.intake_completed_at %}<span class="ok">{{ m.icon("check", "icon-sm") }}</span><span class="sr-only">Done</span> <span class="hint">{{ s.intake_completed_at|ago }}</span>
+            {% else %}<a href="/intake/{{ s.id }}">Not done yet</a>{% endif %}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7"><div class="empty"><h3>No students match these filters</h3><a href="/students">Clear filters</a></div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block after %}
+{% if selected or adding %}
+<a class="drawer-backdrop" href="/students?{{ qs }}" data-drawer-close aria-label="Close panel"></a>
+<aside class="drawer" aria-labelledby="drawer-title">
+  {% if adding %}
+  <div class="drawer-head">
+    <div><p class="eyebrow">New record</p><h2 id="drawer-title">Add a student</h2></div>
+    <a class="close-btn" href="/students?{{ qs }}" aria-label="Close">{{ m.icon("x") }}</a>
+  </div>
+  <p class="hint">Enter what the school already holds. The student adds their interests and free times in the questionnaire.</p>
+  <section>{% with s=None, action="/students", submit_label="Add student" %}{% include "partials/student_form.html" %}{% endwith %}</section>
+  {% else %}
+  {% set s = selected %}
+  <div class="drawer-head">
+    <div>
+      <p class="eyebrow">{{ "New student" if s.role == "new" else "Buddy" }}</p>
+      <h2 id="drawer-title">{{ s.name }}</h2>
+      <p>{{ m.chip(s.status, s.status_label) }}</p>
+    </div>
+    <a class="close-btn" href="/students?{{ qs }}" aria-label="Close">{{ m.icon("x") }}</a>
+  </div>
+
+  <section aria-label="Profile">
+    <dl>
+      <dt>Grade</dt><dd>Grade {{ s.grade }}{% if s.homeroom %}, {{ s.homeroom }}{% endif %}</dd>
+      <dt>Languages</dt><dd>{{ s.language_text or "—" }}</dd>
+      <dt>Clubs</dt><dd>{{ s.clubs|join(", ") or "—" }}</dd>
+      <dt>Interests</dt><dd>{{ s.interests|join(", ") or "Not given yet" }}</dd>
+      <dt>Free times</dt><dd>{% for slot in s.availability %}{{ slot|slot_words }}{{ ", " if not loop.last }}{% else %}Not given yet{% endfor %}</dd>
+      <dt>Been new before</dt><dd>{{ "Yes" if s.been_new_before else "No" }}</dd>
+      {% if s.role == "buddy" %}
+      <dt>Volunteered</dt><dd>{{ "Yes" if s.willing else "No" }}</dd>
+      <dt>Places</dt><dd>{{ s.places_used }} of {{ s.capacity }} used</dd>
+      {% endif %}
+      <dt>Consent</dt><dd>{% if s.consent_at %}Given {{ s.consent_at|stamp }} (version {{ s.consent_version }}){% else %}Not given yet{% endif %}</dd>
+    </dl>
+  </section>
+
+  <section aria-label="Questionnaire">
+    <h3>Questionnaire</h3>
+    <p class="hint">{% if s.intake_completed_at %}Completed {{ s.intake_completed_at|ago }}. The student can change their answers at any time.{% else %}Not done yet. Share the link with the student, or open it with them.{% endif %}</p>
+    <div class="actions">
+      <a class="btn btn-secondary" href="/intake/{{ s.id }}">{{ m.icon("note-pencil", "icon-sm") }}Open questionnaire</a>
+      <button class="btn btn-quiet" type="button" data-copy="/intake/{{ s.id }}">{{ m.icon("copy", "icon-sm") }}<span data-copy-label>Copy link</span></button>
+    </div>
+  </section>
+
+  <section aria-label="Pairings">
+    <h3>Pairings</h3>
+    {% for h in history %}
+      <p><a href="/review/{{ h.id }}">{{ h.new_name }} &rarr; {{ h.buddy_name }}</a> <span class="num">{{ h.score }}</span> {{ m.match_chip(h.status) }}</p>
+    {% else %}
+      <p class="hint">No pairings yet.</p>
+    {% endfor %}
+  </section>
+
+  <section aria-label="Edit">
+    <h3>Edit school data</h3>
+    {% with action="/students/" ~ s.id, submit_label="Save changes" %}{% include "partials/student_form.html" %}{% endwith %}
+  </section>
+
+  <section aria-label="Data rights">
+    <h3>Data held about {{ s.first_name }}</h3>
+    <p class="hint">Download everything Verbund holds about this student, or delete it all. Deleting also removes their pairings and check-ins.</p>
+    <div class="actions">
+      <a class="btn btn-secondary" href="/students/{{ s.id }}/record.json">{{ m.icon("download-simple", "icon-sm") }}Download data (JSON)</a>
+      <form method="post" action="/students/{{ s.id }}/delete" data-confirm="Delete {{ s.name }} and all their data? This cannot be undone.">
+        <button class="btn btn-danger" type="submit">{{ m.icon("trash", "icon-sm") }}Delete student</button>
+      </form>
+    </div>
+  </section>
+  {% endif %}
+</aside>
+{% endif %}
+{% endblock %}

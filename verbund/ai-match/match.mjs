@@ -2,13 +2,13 @@
 // each new student's buddy, and writes matches.csv for the Framer CMS.
 //
 // Usage:  node match.mjs [students.csv] [matches.csv]
-// Needs:  Node 18+, and Ollama running with a model pulled (default: llama3.2).
-//         Change the model with:  MODEL=qwen2.5 node match.mjs
+// Needs:  Node 18+, and Ollama running with a model pulled (default: qwen2.5:7b).
+//         Change the model with:  MODEL=llama3.2 node match.mjs
 
 import { readFileSync, writeFileSync } from "node:fs"
 
 const [input = "students.csv", output = "matches.csv"] = process.argv.slice(2)
-const MODEL = process.env.MODEL || "llama3.2"
+const MODEL = process.env.MODEL || "qwen2.5:7b"
 const OLLAMA = process.env.OLLAMA_URL || "http://localhost:11434"
 const SHORTLIST = 4 // how many candidate buddies the AI chooses between
 const FLAG_BELOW = 75

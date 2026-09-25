@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { addPropertyControls, ControlType } from "framer"
 
 // Verbund design tokens
@@ -17,14 +17,33 @@ const btn = (primary: boolean, small = false) => ({
     cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" as const,
 })
 
+// Listens to the FilterBar and hides / reorders this row inside its CMS list.
+function useFilter(ref, apply) {
+    useEffect(() => {
+        const run = () => {
+            let item = ref.current
+            while (item && item.parentElement && item.parentElement.children.length < 2) item = item.parentElement
+            if (item) apply(item, (window as any).__verbundFilter || {})
+        }
+        run()
+        window.addEventListener("verbund-filter", run)
+        return () => window.removeEventListener("verbund-filter", run)
+    })
+}
+
 /**
  * One suggested pair. Put it inside a Collection List of "Matches" and connect each property to a CMS field.
  * @framerSupportedLayoutWidth any
  * @framerSupportedLayoutHeight auto
  */
 export default function MatchRow(props) {
-    const { score, newStudent, buddy, why, slug, basePath, style } = props
+    const { score, newStudent, buddy, why, slug, basePath, grade, style } = props
     const [approved, setApproved] = useState(false)
+    const ref = useRef(null)
+    useFilter(ref, (item, f) => {
+        item.style.display = f.grade && f.grade !== "all" && String(grade) !== f.grade ? "none" : ""
+        item.style.order = f.sort ? String(f.sort === "low" ? score : -score) : ""
+    })
     const person = (label, name) => (
         <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 150 }}>
             <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: C.faint }}>{label}</span>
@@ -32,7 +51,7 @@ export default function MatchRow(props) {
         </div>
     )
     return (
-        <div style={{ ...style, width: "100%", fontFamily: body, color: C.ink }}>
+        <div ref={ref} style={{ ...style, width: "100%", fontFamily: body, color: C.ink }}>
             <div style={inner}>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 24, padding: "16px 0", borderBottom: `1px solid ${C.borderStrong}` }}>
                     <div style={{ width: 88, flexShrink: 0 }}>
@@ -69,4 +88,5 @@ addPropertyControls(MatchRow, {
     why: { type: ControlType.String, displayTextArea: true, defaultValue: "Both speak Spanish, Marathi, Hindi, and English, and both play basketball." },
     slug: { type: ControlType.String, defaultValue: "aarav-subhedar-aayush-karade" },
     basePath: { type: ControlType.String, title: "Review page path", defaultValue: "/matches/" },
+    grade: { type: ControlType.String, title: "New grade", defaultValue: "10" },
 })

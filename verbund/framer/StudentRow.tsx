@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react"
 import { addPropertyControls, ControlType } from "framer"
 
 // Verbund design tokens
@@ -16,6 +17,20 @@ const btn = (primary: boolean, small = false) => ({
     cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" as const,
 })
 
+// Listens to the FilterBar and hides / reorders this row inside its CMS list.
+function useFilter(ref, apply) {
+    useEffect(() => {
+        const run = () => {
+            let item = ref.current
+            while (item && item.parentElement && item.parentElement.children.length < 2) item = item.parentElement
+            if (item) apply(item, (window as any).__verbundFilter || {})
+        }
+        run()
+        window.addEventListener("verbund-filter", run)
+        return () => window.removeEventListener("verbund-filter", run)
+    })
+}
+
 const COLS: [string, number][] = [
     ["Name", 18], ["Grade", 6], ["Languages", 26], ["Clubs & activities", 20], ["Role", 8], ["Status", 22],
 ]
@@ -28,10 +43,24 @@ const COLS: [string, number][] = [
  */
 export default function StudentRow(props) {
     const { header, name, grade, languages, clubs, role, status, style } = props
+    const ref = useRef(null)
+    useFilter(ref, (item, f) => {
+        if (header) return
+        const hide = (f.grade && f.grade !== "all" && String(grade) !== f.grade) ||
+            (f.role && f.role !== "all" && String(role).toLowerCase() !== f.role)
+        item.style.display = hide ? "none" : ""
+    })
+    // Remember every row so the "Export CSV" button can download them.
+    useEffect(() => {
+        if (header) return
+        const all = ((window as any).__verbundStudents ||= new Map())
+        all.set(name, { name, grade, languages, clubs, role, status })
+        return () => { all.delete(name) }
+    }, [header, name, grade, languages, clubs, role, status])
     const cells = header ? COLS.map((c) => c[0]) : [name, String(grade), languages, clubs, role, status]
     const statusColor = /matched|reassigned|approved/i.test(status) ? C.good : C.soft
     return (
-        <div style={{ ...style, width: "100%", fontFamily: body, color: C.ink }}>
+        <div ref={ref} style={{ ...style, width: "100%", fontFamily: body, color: C.ink }}>
             <div style={inner}>
                 <div style={{
                     display: "flex", gap: 12, alignItems: "center",

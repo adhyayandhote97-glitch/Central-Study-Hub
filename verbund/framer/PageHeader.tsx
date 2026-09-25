@@ -22,11 +22,23 @@ const btn = (primary: boolean, small = false) => ({
  * @framerSupportedLayoutHeight auto
  */
 export default function PageHeader(props) {
-    const { title, subtitle, secondaryLabel, secondaryLink, primaryLabel, primaryLink, sectionTitle, style } = props
-    const Btn = ({ label, link, primary }) =>
-        !label ? null : link
-            ? <a href={link} style={btn(primary)}>{label}</a>
-            : <button style={btn(primary)}>{label}</button>
+    const { title, subtitle, secondaryLabel, secondaryLink, secondaryAction, primaryLabel, primaryLink, sectionTitle, style } = props
+    const exportCsv = () => {
+        const rows = [...(((window as any).__verbundStudents || new Map()).values())]
+        const csv = [["Name", "Grade", "Languages", "Clubs", "Role", "Status"],
+            ...rows.map((r) => [r.name, r.grade, r.languages, r.clubs, r.role, r.status])]
+            .map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n")
+        const a = document.createElement("a")
+        a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }))
+        a.download = "verbund-students.csv"
+        a.click()
+    }
+    const Btn = ({ label, link, primary, onClick = undefined }) =>
+        !label ? null : onClick
+            ? <button style={btn(primary)} onClick={onClick}>{label}</button>
+            : link
+                ? <a href={link} target={/^https?:/.test(link) ? "_blank" : undefined} rel="noreferrer" style={btn(primary)}>{label}</a>
+                : <button style={btn(primary)}>{label}</button>
     return (
         <div style={{ ...style, width: "100%", fontFamily: body, color: C.ink }}>
             <div style={inner}>
@@ -36,7 +48,7 @@ export default function PageHeader(props) {
                         {subtitle && <p style={{ margin: "8px 0 0", color: C.soft, fontSize: 15, fontStyle: "italic" }}>{subtitle}</p>}
                     </div>
                     <div style={{ display: "flex", gap: 12 }}>
-                        <Btn label={secondaryLabel} link={secondaryLink} primary={false} />
+                        <Btn label={secondaryLabel} link={secondaryLink} primary={false} onClick={secondaryAction === "Export students CSV" ? exportCsv : undefined} />
                         <Btn label={primaryLabel} link={primaryLink} primary={true} />
                     </div>
                 </div>
@@ -54,7 +66,8 @@ addPropertyControls(PageHeader, {
     title: { type: ControlType.String, defaultValue: "Dashboard" },
     subtitle: { type: ControlType.String, defaultValue: "Fall term buddy matching is open" },
     secondaryLabel: { type: ControlType.String, title: "Button 1", defaultValue: "View students" },
-    secondaryLink: { type: ControlType.Link, title: "Button 1 link", defaultValue: "/students" },
+    secondaryAction: { type: ControlType.Enum, title: "Button 1 does", options: ["Open link", "Export students CSV"], defaultValue: "Open link" },
+    secondaryLink: { type: ControlType.Link, title: "Button 1 link", defaultValue: "/students", hidden: (p) => p.secondaryAction === "Export students CSV" },
     primaryLabel: { type: ControlType.String, title: "Button 2", defaultValue: "Review matches" },
     primaryLink: { type: ControlType.Link, title: "Button 2 link", defaultValue: "/matching" },
     sectionTitle: { type: ControlType.String, title: "Section title", defaultValue: "" },

@@ -42,7 +42,7 @@ function setTheme(theme) {
  * @framerSupportedLayoutHeight auto
  */
 export default function Masthead(props) {
-    const { active, dashboardLink, studentsLink, matchingLink, reviewLink, style } = props
+    const { active, homeLink, dashboardLink, studentsLink, matchingLink, reviewLink, style } = props
     const [theme, setThemeState] = useState("light")
     useEffect(() => {
         let saved = "light"
@@ -91,9 +91,9 @@ export default function Masthead(props) {
                 </div>
                 <span>Staff</span>
             </div>
-            <div style={{ fontFamily: display, fontSize: 34, fontWeight: 700, lineHeight: 1.2 }}>
+            <a href={homeLink} style={{ display: "inline-block", fontFamily: display, fontSize: 34, fontWeight: 700, lineHeight: 1.2, color: C.ink, textDecoration: "none" }}>
                 Ver<span style={{ color: C.accent }}>bund</span>
-            </div>
+            </a>
             <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.18em", color: C.faint, marginTop: 4 }}>
                 Buddy Matching Gazette
             </div>
@@ -113,7 +113,8 @@ export default function Masthead(props) {
 
 addPropertyControls(Masthead, {
     active: { type: ControlType.Enum, title: "Active tab", options: ["Dashboard", "Students", "Matching", "Review"], defaultValue: "Dashboard" },
-    dashboardLink: { type: ControlType.Link, title: "Dashboard link", defaultValue: "/" },
+    homeLink: { type: ControlType.Link, title: "Logo link", defaultValue: "/" },
+    dashboardLink: { type: ControlType.Link, title: "Dashboard link", defaultValue: "/dashboard" },
     studentsLink: { type: ControlType.Link, title: "Students link", defaultValue: "/students" },
     matchingLink: { type: ControlType.Link, title: "Matching link", defaultValue: "/matching" },
     reviewLink: { type: ControlType.Link, title: "Review link", defaultValue: "/matches/aarav-subhedar-aayush-karade" },

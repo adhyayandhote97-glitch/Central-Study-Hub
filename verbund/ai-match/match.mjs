@@ -86,7 +86,7 @@ async function askAI(prompt) {
     const res = await fetch(`${OLLAMA}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: MODEL, stream: false, format: "json", messages: [{ role: "user", content: prompt }] }),
+        body: JSON.stringify({ model: MODEL, stream: false, format: "json", options: { temperature: 0.2 }, messages: [{ role: "user", content: prompt }] }),
     })
     if (!res.ok) throw new Error(`Ollama returned ${res.status}: ${await res.text()}`)
     return JSON.parse((await res.json()).message.content)
@@ -114,7 +114,13 @@ New student:
 ${describe(student)}
 
 Candidate buddies:
-${candidates.map((b) => `- ${describe(b)}; already assigned: ${load.get(b.name).length}`).join("\n")}
+${candidates.map((b) => `- ${describe(b)}
+  FACTS: shared languages: ${shared(student.langs, b.langs).join(", ") || "none"}; shared clubs: ${shared(student.clubs, b.clubs).join(", ") || "none"}; base score: ${ruleScore(student, b)}; already assigned: ${load.get(b.name).length}`).join("\n")}
+
+Rules:
+- Use ONLY the facts above. Never say two students share a club or background unless it is listed.
+- Each score must stay within 10 points of that candidate's base score. Only near-perfect matches go above 90.
+- If the best candidate still has no shared clubs or only two shared languages, say it needs a closer look.
 
 Pick the single best buddy, then rate the next two best candidates. Reply with JSON only:
 {"buddy": "<exact name from the list>", "score": <0-100 compatibility>, "why": "<one short sentence>",
@@ -130,6 +136,7 @@ ${describe(buddy)}
 Assigned new students:
 ${assigned.length ? assigned.map((m) => `- ${m.student.name} (score ${m.score}): ${m.why}`).join("\n") : "- none yet"}
 
+Use ONLY these facts; do not invent shared clubs, backgrounds or personal details. Call any score under ${FLAG_BELOW} weak.
 Reply with JSON only: {"explanation": "<two or three sentences>"}`
 
 // ---------- Run ----------
@@ -145,15 +152,16 @@ for (const s of newStudents) {
     const result = await tryAI(matchPrompt(s, candidates), s.name)
 
     const b = byName(candidates, result?.buddy) || candidates[0]
-    const score = Math.round(Math.max(0, Math.min(100, Number(result?.score) || ruleScore(s, b))))
-    const why = result?.why || ruleWhy(s, b)
+    const clampScore = (x, base) => Math.round(Math.max(base - 10, Math.min(base + 10, 95, Number(x) || base)))
+    const score = clampScore(result?.score, ruleScore(s, b))
+    const why = ruleWhy(s, b)
     const explanation = result?.explanation || why
 
     // Other compatible buddies: the AI's picks if valid, otherwise the next best by rule score.
     const alts = []
     for (const a of Array.isArray(result?.alternatives) ? result.alternatives : []) {
         const c = byName(candidates, a?.buddy)
-        if (c && c !== b && !alts.some((x) => x.c === c)) alts.push({ c, score: Math.round(Number(a.score) || ruleScore(s, c)), reason: a.reason || ruleWhy(s, c) })
+        if (c && c !== b && !alts.some((x) => x.c === c)) alts.push({ c, score: clampScore(a.score, ruleScore(s, c)), reason: ruleWhy(s, c) })
     }
     for (const c of candidates) {
         if (alts.length >= 2) break

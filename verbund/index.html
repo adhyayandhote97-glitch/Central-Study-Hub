@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verbund</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F7F5F0; --surface: #FFFFFF; --border: #DEDACD; --border-strong: #B9B29B;
+  --ink: #1C1A16; --ink-soft: #5E594C; --ink-faint: #8E8874;
+  --accent: #9E2B25; --accent-dark: #7A1F1B; --accent-tint: #F3E2E0; --good: #3C6B4A;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+  --radius: 2px;
+  --display: "Playfair Display", Georgia, serif;
+  --body: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+}
+:root[data-theme="dark"] {
+  --bg: #16140F; --surface: #1F1C16; --border: #34302A; --border-strong: #4A453B;
+  --ink: #EDE8DC; --ink-soft: #B5AE9C; --ink-faint: #8A8472;
+  --accent: #D8574F; --accent-dark: #B8433C; --accent-tint: #3A2220; --good: #7FB08E;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.55; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; color: var(--ink); margin: 0; }
+p { margin: 0; } a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+
+/* Masthead */
+.masthead { border-bottom: 3px double var(--ink); background: var(--surface); padding: var(--sp-6) 0 0; }
+.masthead-inner { max-width: 1040px; margin: 0 auto; padding: 0 var(--sp-8); text-align: center; position: relative; }
+.wordmark { font-family: var(--display); font-size: 34px; font-weight: 700; }
+.wordmark span { color: var(--accent); }
+.tagline { font-size: 12px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--ink-faint); margin-top: var(--sp-1); }
+.masthead-nav { display: flex; justify-content: center; gap: var(--sp-6); margin-top: var(--sp-4); padding: var(--sp-3) 0; border-top: 1px solid var(--border); }
+.masthead-nav a { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-soft); padding-bottom: 2px; border-bottom: 2px solid transparent; }
+.masthead-nav a:hover { color: var(--ink); }
+.masthead-nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+.masthead-role { position: absolute; right: var(--sp-8); top: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-faint); display: flex; align-items: center; gap: var(--sp-3); }
+.theme-toggle { display: flex; gap: 4px; }
+.theme-toggle button { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius); border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink-soft); cursor: pointer; padding: 0; }
+.theme-toggle button.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* Layout */
+.shell { max-width: 1040px; margin: 0 auto; padding: 0 var(--sp-8) var(--sp-10); }
+.page-head { padding: var(--sp-8) 0 var(--sp-6); display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-6); border-bottom: 1px solid var(--border-strong); }
+.page-head h1 { font-size: 32px; }
+.page-head .sub { color: var(--ink-soft); font-size: 15px; margin-top: var(--sp-2); font-style: italic; }
+.page-head-actions { display: flex; gap: var(--sp-3); flex-shrink: 0; align-items: center; }
+.back-link { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); display: inline-block; margin-top: var(--sp-6); }
+.back-link:hover { color: var(--accent); }
+.back-link + .page-head { padding-top: var(--sp-4); }
+.back-link + .page-head h1 { font-size: 28px; }
+.main-single { max-width: 700px; }
+.empty { padding: var(--sp-6) 0; color: var(--ink-soft); font-style: italic; }
+.footer { margin-top: var(--sp-10); font-size: 12px; color: var(--ink-faint); text-align: center; }
+.footer button { background: none; border: none; color: var(--accent); cursor: pointer; text-decoration: underline; padding: 0; font-size: 12px; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: var(--sp-2); border-radius: var(--radius); padding: var(--sp-2) var(--sp-4); font-size: 13px; font-weight: 600; border: 1px solid var(--ink); cursor: pointer; font-family: var(--body); text-transform: uppercase; letter-spacing: 0.04em; }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+.btn-secondary { background: transparent; color: var(--ink); }
+.btn-secondary:hover { background: var(--bg); }
+.btn-sm { padding: 5px var(--sp-3); font-size: 11px; }
+.done-tag { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: var(--good); }
+
+/* Stats */
+.stat-strip { display: flex; padding: var(--sp-6) 0; border-bottom: 1px solid var(--border-strong); margin-bottom: var(--sp-8); }
+.stat { padding: 0 var(--sp-6); border-right: 1px solid var(--border); }
+.stat:first-child { padding-left: 0; }
+.stat:last-child { border-right: none; }
+.stat .num { font-family: var(--display); font-size: 30px; font-weight: 700; color: var(--accent); display: block; }
+.stat .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin-top: 2px; display: block; }
+
+.section-head { display: flex; align-items: baseline; justify-content: space-between; margin: var(--sp-8) 0 var(--sp-4); border-bottom: 1px solid var(--ink); padding-bottom: var(--sp-2); }
+.stat-strip + .main-single .section-head { margin-top: 0; }
+.section-head h2 { font-size: 14px; font-family: var(--body); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.section-head a { font-size: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.filter-bar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-4); margin: var(--sp-6) 0 var(--sp-4); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); }
+.section-head + .filter-bar { margin-top: 0; }
+.filter-bar select { border: 1px solid var(--ink); border-radius: var(--radius); padding: 5px var(--sp-2); background: var(--surface); color: var(--ink); font-size: 13px; text-transform: none; letter-spacing: normal; }
+
+/* Match rows */
+.score-print { width: 88px; flex-shrink: 0; }
+.score-print .num { font-family: var(--display); font-size: 26px; font-weight: 700; line-height: 1; }
+.score-print .rule { height: 2px; background: var(--ink); margin-top: var(--sp-2); }
+.score-print.lg { width: 100%; max-width: 260px; }
+.score-print.lg .num { font-size: 56px; }
+.score-print.lg .rule { height: 3px; margin-top: var(--sp-3); }
+.match-list { border-top: 1px solid var(--ink); }
+.match-row { display: flex; align-items: flex-start; gap: var(--sp-6); padding: var(--sp-4) 0; border-bottom: 1px solid var(--border-strong); }
+.match-row .main { flex: 1; min-width: 0; }
+.pair { display: flex; align-items: center; gap: var(--sp-4); }
+.pair-col { display: flex; flex-direction: column; gap: 2px; min-width: 150px; }
+.pair-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-faint); }
+.pair-divider { width: 1px; align-self: stretch; background: var(--border-strong); min-height: 30px; }
+.match-row .explain { font-style: italic; color: var(--ink-soft); font-size: 14px; margin-top: var(--sp-2); }
+.match-row .actions { display: flex; gap: var(--sp-2); flex-shrink: 0; margin-top: 2px; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; }
+.table, .compare { width: 100%; border-collapse: collapse; }
+.table th, .compare th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; padding: var(--sp-2) var(--sp-3); border-bottom: 2px solid var(--ink); white-space: nowrap; }
+.table td { padding: var(--sp-3); border-bottom: 1px solid var(--border-strong); font-size: 14px; }
+.table th:first-child, .table td:first-child { padding-left: 0; }
+.table tbody tr:hover td { background: var(--accent-tint); }
+.soft { color: var(--ink-soft); }
+.status-matched { color: var(--good); font-style: italic; }
+.status-available { color: var(--ink-soft); font-style: italic; }
+.status-flag { color: var(--accent); font-style: italic; }
+
+/* Review */
+.card { background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius); padding: var(--sp-6); }
+.score-card { display: flex; align-items: center; gap: var(--sp-8); margin-top: var(--sp-6); }
+.explain-text { font-style: italic; color: var(--ink-soft); }
+.profile-panels { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); margin-top: var(--sp-6); }
+.role-tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: var(--sp-1); display: block; font-weight: 700; }
+.profile-panels h3 { font-size: 20px; }
+.meta { color: var(--ink-soft); font-size: 13px; margin-top: 2px; font-style: italic; }
+.bio { margin-top: var(--sp-3); color: var(--ink-soft); font-size: 14px; }
+.compare { margin-top: var(--sp-6); }
+.compare td { padding: var(--sp-4); border-bottom: 1px solid var(--border-strong); font-size: 14px; vertical-align: top; }
+.compare th:first-child { padding-left: 0; }
+.compare td.attr { color: var(--ink-soft); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; width: 190px; padding-left: 0; }
+.hit { color: var(--accent); font-weight: 700; font-style: italic; }
+
+/* Toast + dialog */
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--bg); padding: var(--sp-3) var(--sp-6); font-size: 14px; opacity: 0; pointer-events: none; transition: .2s; max-width: calc(100% - 32px); }
+.toast.show { opacity: 1; transform: translateX(-50%); }
+dialog { border: 1px solid var(--ink); border-radius: var(--radius); background: var(--surface); color: var(--ink); padding: var(--sp-6); width: min(420px, calc(100% - 32px)); }
+dialog::backdrop { background: rgba(0,0,0,.4); }
+dialog label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin-top: var(--sp-4); }
+dialog input, dialog select { display: block; width: 100%; margin-top: var(--sp-1); padding: var(--sp-2); border: 1px solid var(--border-strong); background: var(--bg); text-transform: none; letter-spacing: normal; font-size: 15px; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: var(--sp-3); margin-top: var(--sp-6); }
+
+/* Phones */
+@media (max-width: 720px) {
+  .masthead-inner, .shell { padding-left: 16px; padding-right: 16px; }
+  .masthead-role { position: static; justify-content: center; margin-bottom: var(--sp-3); }
+  .masthead-nav { gap: var(--sp-4); }
+  .page-head { flex-direction: column; align-items: flex-start; }
+  .stat-strip { flex-wrap: wrap; row-gap: var(--sp-4); }
+  .stat { width: 50%; padding: 0 var(--sp-3) 0 0; border: none; }
+  .match-row { flex-wrap: wrap; gap: var(--sp-3); }
+  .pair { flex-wrap: wrap; }
+  .pair-col { min-width: 0; }
+  .score-card { flex-direction: column; align-items: flex-start; gap: var(--sp-4); }
+  .profile-panels { grid-template-columns: 1fr; }
+  .compare td.attr { width: auto; }
+}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="masthead-inner">
+    <div class="masthead-role">
+      <div class="theme-toggle">
+        <button data-theme-set="light" title="Light mode">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round"/></svg>
+        </button>
+        <button data-theme-set="dark" title="Dark mode">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.5A8.5 8.5 0 1111.5 3a7 7 0 009.5 9.5z" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <span>Staff</span>
+    </div>
+    <div class="wordmark">Ver<span>bund</span></div>
+    <div class="tagline">Buddy Matching Gazette</div>
+    <nav class="masthead-nav">
+      <a href="#dashboard" data-nav="dashboard">Dashboard</a>
+      <a href="#students" data-nav="students">Students</a>
+      <a href="#matching" data-nav="matching">Matching</a>
+      <a href="#review" data-nav="review">Review</a>
+    </nav>
+  </div>
+</div>
+
+<main class="shell" id="app"></main>
+
+<div class="toast" id="toast"></div>
+
+<dialog id="add-dialog">
+  <form id="add-form">
+    <h3>Add student</h3>
+    <label>Name <input name="name" required></label>
+    <label>Grade
+      <select name="grade"><option>9</option><option>10</option><option>11</option></select>
+    </label>
+    <label>Role
+      <select name="role"><option value="new">New student</option><option value="buddy">Buddy</option></select>
+    </label>
+    <label>Languages (comma separated) <input name="langs" placeholder="Hindi, English"></label>
+    <label>Clubs &amp; activities (comma separated) <input name="clubs" placeholder="Chess Club"></label>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" data-action="close-add">Cancel</button>
+      <button type="submit" class="btn btn-primary">Add student</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+// ---------- Data (edit this to change the demo) ----------
+const SEED = {
+  students: [
+    { id: 'aarav', name: 'Aarav Subhedar', grade: 10, role: 'new', langs: ['Spanish', 'Marathi', 'Hindi', 'English'], clubs: ['Basketball'],
+      meta: 'Grade 10 · Joined Aug 3', bio: "Has lived in Pune his entire life. Loves music and basketball, and doesn't have any siblings at home.",
+      interests: 'Basketball, music', background: 'Lived in Pune his whole life, no siblings',
+      newness: "Never moved before - this is Aarav's first time navigating something unfamiliar" },
+    { id: 'vihaan', name: 'Vihaan Kanase', grade: 10, role: 'new', langs: ['Spanish', 'Marathi', 'Hindi', 'English'], clubs: ['Gym', 'Football'] },
+    { id: 'rohan', name: 'Rohan Edlabadkar', grade: 11, role: 'new', langs: ['French', 'Marathi', 'Hindi', 'English'], clubs: ['Robotics', 'Mathematics'] },
+    { id: 'ishan', name: 'Ishan Desai', grade: 9, role: 'new', langs: ['French', 'Marathi', 'Hindi', 'English'], clubs: ['Gym'] },
+    { id: 'aarush', name: 'Aarush Navodia', grade: 11, role: 'new', langs: ['Spanish', 'Hindi', 'English'], clubs: ['Biology', 'Gym', 'Football'] },
+    { id: 'navyaa', name: 'Navyaa Varma', grade: 9, role: 'new', langs: ['Spanish', 'Gujarati', 'Hindi', 'English'], clubs: ['Coding', 'Robotics', 'AI'] },
+    { id: 'deshna', name: 'Deshna Jain', grade: 10, role: 'new', langs: ['Hindi', 'English'], clubs: ['Photography Club'] },
+    { id: 'vasundhra', name: 'Vasundhra Ratnam', grade: 9, role: 'new', langs: ['French', 'Hindi', 'English'], clubs: ['Model UN'] },
+    { id: 'ayan', name: 'Ayan Bairagi', grade: 9, role: 'new', langs: ['Spanish', 'Bengali', 'Hindi', 'English'], clubs: ['Chess Club'] },
+    { id: 'purnendu', name: 'Purnendu Malani', grade: 10, role: 'buddy', langs: ['Spanish', 'Hindi', 'English', 'Marathi'], clubs: ['Football', 'Gym'] },
+    { id: 'parth', name: 'Parth Patel', grade: 10, role: 'buddy', langs: ['Spanish', 'Gujarati', 'Hindi', 'English', 'Marathi'], clubs: ['Gym'] },
+    { id: 'aayush', name: 'Aayush Karade', grade: 11, role: 'buddy', langs: ['Spanish', 'Marathi', 'Hindi', 'English'], clubs: ['Basketball'],
+      meta: 'Grade 11 · Moved from Germany', bio: 'Moved to India from Germany and has no siblings. Volunteered to be a buddy this term, having gone through the experience of arriving somewhere new himself.',
+      interests: 'Basketball, settling into a new country', background: 'Moved from Germany, no siblings',
+      newness: "Moved internationally himself, understands what it's like to be the new one" },
+    { id: 'arjun', name: 'Arjun Gupta', grade: 9, role: 'buddy', langs: ['Spanish', 'Hindi', 'English'], clubs: ['Basketball'] },
+    { id: 'abhijit', name: 'Abhijit Tawri', grade: 9, role: 'buddy', langs: ['Spanish', 'Marathi', 'Hindi', 'English'], clubs: ['Gym', 'Basketball', 'Football'] },
+  ],
+  matches: [
+    { id: 'm1', newId: 'aarav', buddyId: 'aayush', score: 92, date: 'Aug 10', status: 'pending',
+      why: 'Both speak Spanish, Marathi, Hindi, and English, and both play basketball.',
+      long: 'Both speak Spanish, Marathi, Hindi, and English, and both play basketball. Aarav grew up in Pune and knows the city well, while Aayush moved here from Germany last year - a useful contrast for someone helping a new student settle in.' },
+    { id: 'm2', newId: 'vihaan', buddyId: 'abhijit', score: 89, date: 'Aug 10', status: 'pending',
+      why: 'Both speak Spanish, Marathi, Hindi, and English, and go to the gym and play football together.' },
+    { id: 'm3', newId: 'navyaa', buddyId: 'parth', score: 84, date: 'Aug 10', status: 'pending',
+      why: 'Navyaa and Parth are two of the only students who speak Gujarati, alongside shared Spanish, Hindi, and English.' },
+    { id: 'm4', newId: 'ishan', buddyId: 'purnendu', score: 82, date: 'Aug 10', status: 'pending',
+      why: 'Both speak Marathi, Hindi, and English, and both go to the gym.' },
+    { id: 'm5', newId: 'aarush', buddyId: 'arjun', score: 79, date: 'Aug 11', status: 'pending',
+      why: "Both speak Spanish, Hindi, and English, though their activities don't overlap yet." },
+    { id: 'm6', newId: 'rohan', buddyId: 'parth', score: 74, date: 'Aug 11', status: 'pending',
+      why: 'Share Marathi, Hindi, and English, but no common activities - worth a closer look.' },
+    { id: 'm7', newId: 'ayan', buddyId: 'aayush', score: 70, date: 'Aug 11', status: 'pending',
+      why: 'Share Spanish, Hindi, and English; Ayan also speaks Bengali.' },
+    { id: 'm8', newId: 'deshna', buddyId: 'arjun', score: 61, date: 'Aug 12', status: 'pending',
+      why: 'Only overlap is Hindi and English, with no shared activities. Flagged for review.' },
+  ],
+};
+const FLAG_BELOW = 75; // matches scoring under this count as "flagged"
+
+// ---------- Saving (in this browser only) ----------
+const KEY = 'verbund-demo-v1';
+let db = load();
+function load() {
+  try { const saved = JSON.parse(localStorage.getItem(KEY)); if (saved && saved.students) return saved; } catch (e) {}
+  return JSON.parse(JSON.stringify(SEED));
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} }
+
+// ---------- Helpers ----------
+const ui = { grade: 'all', role: 'all', sort: 'high' };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const byId = id => db.students.find(s => s.id === id);
+const shared = (a, b) => a.filter(x => b.includes(x));
+const list = arr => arr.join(', ');
+const pending = () => db.matches.filter(m => m.status === 'pending').sort((a, b) => b.score - a.score);
+const today = opts => new Date().toLocaleDateString('en-GB', opts);
+
+// The "matching model": points for every shared language and club.
+function calcScore(a, b) {
+  return Math.min(95, 30 + 12 * shared(a.langs, b.langs).length + 10 * shared(a.clubs, b.clubs).length);
+}
+function explain(a, b) {
+  const l = shared(a.langs, b.langs), c = shared(a.clubs, b.clubs);
+  return (l.length ? `Both speak ${list(l)}` : 'No shared languages') +
+         (c.length ? `, and share ${list(c)}.` : ', with no shared activities.');
+}
+
+function statusOf(s) {
+  if (s.role === 'new') {
+    const m = db.matches.find(m => m.newId === s.id);
+    if (!m) return ['Awaiting a buddy', 'status-available'];
+    if (m.status === 'approved') return ['Approved', 'status-matched'];
+    if (m.status === 'declined') return ['Declined, needs a buddy', 'status-flag'];
+    return [m.reassigned ? 'Manually reassigned' : 'Matched, awaiting approval', 'status-matched'];
+  }
+  const ms = db.matches.filter(m => m.buddyId === s.id);
+  if (ms.some(m => m.status === 'approved')) return ['Matched', 'status-matched'];
+  if (ms.some(m => m.status === 'pending')) return ['Suggested', 'status-available'];
+  return ['Available', 'status-available'];
+}
+
+const scorePrint = (n, lg) =>
+  `<div class="score-print${lg ? ' lg' : ''}"><span class="num">${n}</span><div class="rule" style="width:${n}%"></div></div>`;
+
+function select(key, options) {
+  return `<select data-filter="${key}">${options.map(([v, label]) =>
+    `<option value="${v}"${ui[key] == v ? ' selected' : ''}>${label}</option>`).join('')}</select>`;
+}
+const GRADES = [['all', 'All grades'], ['9', 'Grade 9'], ['10', 'Grade 10'], ['11', 'Grade 11']];
+
+function matchRow(m) {
+  const a = byId(m.newId), b = byId(m.buddyId);
+  return `<div class="match-row">
+    ${scorePrint(m.score)}
+    <div class="main">
+      <div class="pair">
+        <div class="pair-col"><span class="pair-label">New student</span><strong>${esc(a.name)}</strong></div>
+        <div class="pair-divider"></div>
+        <div class="pair-col"><span class="pair-label">Buddy</span><strong>${esc(b.name)}</strong></div>
+      </div>
+      <div class="explain">${esc(m.why)}</div>
+    </div>
+    <div class="actions">
+      <a href="#review/${m.id}" class="btn btn-secondary btn-sm">Review</a>
+      <button class="btn btn-primary btn-sm" data-approve="${m.id}">Approve</button>
+    </div>
+  </div>`;
+}
+
+// ---------- Pages ----------
+function dashboard() {
+  const p = pending();
+  const stat = (n, label) => `<div class="stat"><span class="num">${n}</span><span class="label">${label}</span></div>`;
+  return `
+  <div class="page-head">
+    <div><h1>Dashboard</h1><p class="sub">${today({ weekday: 'long', day: 'numeric', month: 'long' })} — Fall term buddy matching is open</p></div>
+    <div class="page-head-actions">
+      <a href="#students" class="btn btn-secondary">View students</a>
+      <a href="#matching" class="btn btn-primary">Review matches</a>
+    </div>
+  </div>
+  <div class="stat-strip">
+    ${stat(p.length, 'Pending matches')}
+    ${stat(db.students.filter(s => s.role === 'new').length, 'New students this term')}
+    ${stat(db.matches.filter(m => m.status === 'approved').length, 'Approved')}
+    ${stat(p.filter(m => m.score < FLAG_BELOW).length, 'Flagged for review')}
+  </div>
+  <div class="main-single">
+    <div class="section-head"><h2>Pending matches</h2><a href="#matching">View all ${p.length} →</a></div>
+    <div class="match-list">${p.slice(0, 4).map(matchRow).join('') || '<p class="empty">Every match has been reviewed.</p>'}</div>
+  </div>`;
+}
+
+function students() {
+  const rows = db.students.filter(s =>
+    (ui.grade === 'all' || s.grade == ui.grade) && (ui.role === 'all' || s.role === ui.role));
+  return `
+  <div class="page-head">
+    <div><h1>Students</h1><p class="sub">Student records used for matching, sourced from school systems</p></div>
+    <div class="page-head-actions">
+      <button class="btn btn-secondary" data-action="export">Export CSV</button>
+      <button class="btn btn-primary" data-action="open-add">Add student</button>
+    </div>
+  </div>
+  <div class="section-head" style="margin-top: var(--sp-6)"><h2>All students (${rows.length})</h2></div>
+  <div class="filter-bar">
+    <span>Grade</span>${select('grade', GRADES)}
+    <span>Role</span>${select('role', [['all', 'Everyone'], ['new', 'New students'], ['buddy', 'Buddies']])}
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Name</th><th>Grade</th><th>Languages</th><th>Clubs &amp; activities</th><th>Role</th><th>Status</th></tr></thead>
+    <tbody>${rows.map(s => {
+      const [status, cls] = statusOf(s);
+      return `<tr><td>${esc(s.name)}</td><td>${s.grade}</td><td class="soft">${esc(list(s.langs))}</td>
+        <td class="soft">${esc(list(s.clubs))}</td><td>${s.role === 'new' ? 'New' : 'Buddy'}</td><td class="${cls}">${status}</td></tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+function matching() {
+  const p = pending().filter(m => ui.grade === 'all' || byId(m.newId).grade == ui.grade);
+  if (ui.sort === 'low') p.reverse();
+  return `
+  <div class="page-head">
+    <div><h1>Matching</h1><p class="sub">Suggested pairings for students awaiting a buddy, highest score first</p></div>
+  </div>
+  <div class="filter-bar">
+    <span>Grade</span>${select('grade', GRADES)}
+    <span>Sort</span>${select('sort', [['high', 'Highest score first'], ['low', 'Lowest score first']])}
+  </div>
+  <div class="match-list">${p.map(matchRow).join('') || '<p class="empty">No pending matches here.</p>'}</div>`;
+}
+
+function review(id) {
+  const m = db.matches.find(x => x.id === id) || pending()[0];
+  if (!m) return `<a href="#matching" class="back-link">&larr; Back to matching</a>
+    <div class="page-head"><div><h1>Nothing to review</h1><p class="sub">Every suggested match has been approved or declined.</p></div></div>`;
+
+  const a = byId(m.newId), b = byId(m.buddyId);
+  const l = shared(a.langs, b.langs), c = shared(a.clubs, b.clubs);
+  const mark = (arr, hits) => arr.length ? arr.map(x => hits.includes(x) ? `<span class="hit">${esc(x)}</span>` : esc(x)).join(', ') : '—';
+  const rows = [
+    ['Grade', `Grade ${a.grade}`, `Grade ${b.grade}`],
+    ['Languages', mark(a.langs, l), mark(b.langs, l)],
+    ['Clubs &amp; activities', mark(a.clubs, c), mark(b.clubs, c)],
+  ];
+  for (const [k, label] of [['interests', 'Interests'], ['background', 'Family / background'], ['newness', 'Prior experience being new']])
+    if (a[k] || b[k]) rows.push([label, esc(a[k] || '—'), esc(b[k] || '—')]);
+
+  const alts = db.students.filter(s => s.role === 'buddy' && s.id !== b.id)
+    .map(s => ({ s, score: calcScore(a, s) })).sort((x, y) => y.score - x.score).slice(0, 3);
+  const open = m.status === 'pending';
+  const panel = (s, tag) => `<div class="card"><span class="role-tag">${tag}</span><h3>${esc(s.name)}</h3>
+    <p class="meta">${esc(s.meta || 'Grade ' + s.grade)}</p>${s.bio ? `<p class="bio">${esc(s.bio)}</p>` : ''}</div>`;
+
+  return `
+  <a href="#matching" class="back-link">&larr; Back to matching</a>
+  <div class="page-head">
+    <div>
+      <h1>${esc(a.name)} – ${esc(b.name)}</h1>
+      <p class="sub">Grade ${a.grade} &amp; Grade ${b.grade} — ${m.reassigned ? 'Manually reassigned by staff' : `Suggested ${m.date} by the matching model`}</p>
+    </div>
+    <div class="page-head-actions">${open
+      ? `<button class="btn btn-secondary" data-decline="${m.id}">Decline</button><button class="btn btn-primary" data-approve="${m.id}">Approve match</button>`
+      : `<span class="done-tag">${m.status === 'approved' ? 'Approved' : 'Declined'}</span>`}</div>
+  </div>
+  <div class="card score-card">${scorePrint(m.score, true)}<p class="explain-text">${esc(m.long || m.why)}</p></div>
+  <div class="profile-panels">${panel(a, 'New student')}${panel(b, 'Buddy')}</div>
+  <div class="table-wrap"><table class="compare">
+    <thead><tr><th>Attribute</th><th>${esc(a.name)}</th><th>${esc(b.name)}</th></tr></thead>
+    <tbody>${rows.map(([k, x, y]) => `<tr><td class="attr">${k}</td><td>${x}</td><td>${y}</td></tr>`).join('')}</tbody>
+  </table></div>
+  <div class="section-head"><h2>Other compatible buddies</h2></div>
+  <div class="match-list">${alts.map(x => `<div class="match-row">
+    ${scorePrint(x.score)}
+    <div class="main"><strong>${esc(x.s.name)}</strong><div class="explain">${esc(explain(a, x.s))}</div></div>
+    <div class="actions">${open ? `<button class="btn btn-secondary btn-sm" data-assign="${m.id}:${x.s.id}">Assign instead</button>` : ''}</div>
+  </div>`).join('')}</div>`;
+}
+
+// ---------- Router ----------
+const PAGES = { dashboard, students, matching, review };
+function render() {
+  const [page, id] = location.hash.slice(1).split('/');
+  const view = PAGES[page] || dashboard;
+  document.getElementById('app').innerHTML = view(id) +
+    `<p class="footer">Demo data is saved in this browser. <button data-action="reset">Reset demo</button></p>`;
+  document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('active', a.dataset.nav === (PAGES[page] ? page : 'dashboard')));
+}
+window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
+
+// ---------- Actions ----------
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+function setStatus(id, status) {
+  const m = db.matches.find(x => x.id === id);
+  m.status = status; save();
+  toast(`${status === 'approved' ? 'Approved' : 'Declined'}: ${byId(m.newId).name} & ${byId(m.buddyId).name}`);
+  if (location.hash.startsWith('#review')) location.hash = '#matching'; else render();
+}
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem('verbund-theme', t); } catch (e) {}
+  document.querySelectorAll('[data-theme-set]').forEach(b => b.classList.toggle('active', b.dataset.themeSet === t));
+}
+function exportCsv() {
+  const rows = [['Name', 'Grade', 'Role', 'Languages', 'Clubs', 'Status'],
+    ...db.students.map(s => [s.name, s.grade, s.role === 'new' ? 'New' : 'Buddy', list(s.langs), list(s.clubs), statusOf(s)[0]])];
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  link.download = 'verbund-students.csv';
+  link.click();
+}
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-approve],[data-decline],[data-assign],[data-theme-set],[data-action]');
+  if (!t) return;
+  const d = t.dataset;
+  if (d.approve) setStatus(d.approve, 'approved');
+  else if (d.decline) setStatus(d.decline, 'declined');
+  else if (d.themeSet) setTheme(d.themeSet);
+  else if (d.assign) {
+    const [mid, sid] = d.assign.split(':');
+    const m = db.matches.find(x => x.id === mid), a = byId(m.newId), b = byId(sid);
+    Object.assign(m, { buddyId: sid, score: calcScore(a, b), why: explain(a, b), long: null, reassigned: true });
+    save(); toast(`${a.name} is now paired with ${b.name}`); render();
+  }
+  else if (d.action === 'export') exportCsv();
+  else if (d.action === 'open-add') document.getElementById('add-dialog').showModal();
+  else if (d.action === 'close-add') document.getElementById('add-dialog').close();
+  else if (d.action === 'reset' && confirm('Reset all demo data?')) {
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    db = load(); render(); toast('Demo data reset');
+  }
+});
+
+document.addEventListener('change', e => {
+  const key = e.target.dataset.filter;
+  if (key) { ui[key] = e.target.value; render(); }
+});
+
+// Adding a new student auto-suggests their best buddy.
+document.getElementById('add-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const split = v => String(v).split(',').map(x => x.trim()).filter(Boolean);
+  const s = { id: 's' + Date.now(), name: f.get('name').trim(), grade: Number(f.get('grade')), role: f.get('role'),
+              langs: split(f.get('langs')), clubs: split(f.get('clubs')) };
+  db.students.push(s);
+  if (s.role === 'new') {
+    const best = db.students.filter(b => b.role === 'buddy')
+      .map(b => ({ b, score: calcScore(s, b) })).sort((x, y) => y.score - x.score)[0];
+    if (best) db.matches.push({ id: 'm' + Date.now(), newId: s.id, buddyId: best.b.id, score: best.score,
+      why: explain(s, best.b), status: 'pending', date: today({ month: 'short', day: 'numeric' }) });
+  }
+  save(); e.target.reset(); document.getElementById('add-dialog').close();
+  toast(s.role === 'new' ? `Added ${s.name} and suggested a buddy` : `Added ${s.name}`);
+  render();
+});
+
+// ---------- Start ----------
+let theme = null;
+try { theme = localStorage.getItem('verbund-theme'); } catch (e) {}
+setTheme(theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+render();
+</script>
+</body>
+</html>

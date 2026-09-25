@@ -1,13 +1,15 @@
 // Verbund AI matching: reads students.csv, asks a local Ollama model to pick
 // each new student's buddy, and writes matches.csv for the Framer CMS.
 //
-// Usage:  node match.mjs [students.csv] [matches.csv]
+// Usage:  node match.mjs [students.csv] [matches.csv] [students-explained.csv]
+// Writes: matches.csv            -> import into the Framer "Matches" collection
+//         students-explained.csv -> import into the Framer "Students" collection (adds Status + Explanation)
 // Needs:  Node 18+, and Ollama running with a model pulled (default: qwen2.5:7b).
 //         Change the model with:  MODEL=llama3.2 node match.mjs
 
 import { readFileSync, writeFileSync } from "node:fs"
 
-const [input = "students.csv", output = "matches.csv"] = process.argv.slice(2)
+const [input = "students.csv", output = "matches.csv", studentsOut = "students-explained.csv"] = process.argv.slice(2)
 const MODEL = process.env.MODEL || "qwen2.5:7b"
 const OLLAMA = process.env.OLLAMA_URL || "http://localhost:11434"
 const SHORTLIST = 4 // how many candidate buddies the AI chooses between
@@ -50,7 +52,10 @@ const students = parseCsv(readFileSync(input, "utf8")).map((r) => ({
     role: /buddy/i.test(pick(r, "role")) ? "buddy" : "new",
     langs: list(pick(r, "languages", "language")),
     clubs: list(pick(r, "clubs", "clubs & activities", "activities")),
-    bio: pick(r, "bio", "about", "background"),
+    bio: pick(r, "bio", "about"),
+    interests: pick(r, "interests", "hobbies"),
+    background: pick(r, "background", "family", "family / background"),
+    newness: pick(r, "newness", "prior experience", "prior experience being new"),
 })).filter((s) => s.name)
 
 const newStudents = students.filter((s) => s.role === "new")
@@ -61,29 +66,23 @@ if (!newStudents.length || !buddies.length) {
 }
 
 // Quick rule-based score, used to shortlist candidates and as a fallback.
-const load = new Map(buddies.map((b) => [b.name, 0]))
+const load = new Map(buddies.map((b) => [b.name, []]))
 const ruleScore = (a, b) =>
     Math.min(95, 30 + 12 * shared(a.langs, b.langs).length + 10 * shared(a.clubs, b.clubs).length)
+const ruleWhy = (a, b) => {
+    const l = shared(a.langs, b.langs), c = shared(a.clubs, b.clubs)
+    return `Both speak ${l.join(", ") || "no common language"}` + (c.length ? `, and share ${c.join(", ")}.` : ", with no shared activities.")
+}
 
 const describe = (s) =>
     `${s.name} (Grade ${s.grade}) - languages: ${s.langs.join(", ") || "none"}; clubs: ${s.clubs.join(", ") || "none"}` +
+    (s.interests ? `; interests: ${s.interests}` : "") +
+    (s.background ? `; background: ${s.background}` : "") +
+    (s.newness ? `; experience of being new: ${s.newness}` : "") +
     (s.bio ? `; about: ${s.bio}` : "")
 
 // ---------- Ollama ----------
-async function askAI(student, candidates) {
-    const prompt = `You match new students at a school with a student "buddy" who helps them settle in.
-Shared languages matter most, then shared clubs/activities, then background (e.g. a buddy who was once new themselves).
-Spread the load: prefer buddies with fewer students already assigned when candidates are close.
-
-New student:
-${describe(student)}
-
-Candidate buddies:
-${candidates.map((b) => `- ${describe(b)}; already assigned: ${load.get(b.name)}`).join("\n")}
-
-Pick the single best buddy. Reply with JSON only:
-{"buddy": "<exact name from the list>", "score": <0-100 compatibility>, "why": "<one short sentence>", "explanation": "<two or three sentences for the staff reviewing this match>"}`
-
+async function askAI(prompt) {
     const res = await fetch(`${OLLAMA}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -93,47 +92,116 @@ Pick the single best buddy. Reply with JSON only:
     return JSON.parse((await res.json()).message.content)
 }
 
-// ---------- Run ----------
-const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })
-const matches = []
-
-for (const s of newStudents) {
-    const candidates = [...buddies]
-        .sort((x, y) => ruleScore(s, y) - 5 * load.get(y.name) - (ruleScore(s, x) - 5 * load.get(x.name)))
-        .slice(0, SHORTLIST)
-    let result
+// Returns the AI's JSON, or null (with a warning) if the reply was unusable.
+async function tryAI(prompt, who) {
     try {
-        result = await askAI(s, candidates)
+        return await askAI(prompt)
     } catch (e) {
         if (e.cause?.code === "ECONNREFUSED" || /fetch failed/.test(e.message)) {
             console.error(`Can't reach Ollama at ${OLLAMA}. Is the Ollama app running?`)
             process.exit(1)
         }
-        console.warn(`  AI reply for ${s.name} was unusable (${e.message}); using the rule-based pick.`)
+        console.warn(`  AI reply for ${who} was unusable (${e.message}); using the rule-based text.`)
+        return null
+    }
+}
+
+const matchPrompt = (student, candidates) => `You match new students at a school with a student "buddy" who helps them settle in.
+Shared languages matter most, then shared clubs/activities, then background (e.g. a buddy who was once new themselves).
+Spread the load: prefer buddies with fewer students already assigned when candidates are close.
+
+New student:
+${describe(student)}
+
+Candidate buddies:
+${candidates.map((b) => `- ${describe(b)}; already assigned: ${load.get(b.name).length}`).join("\n")}
+
+Pick the single best buddy, then rate the next two best candidates. Reply with JSON only:
+{"buddy": "<exact name from the list>", "score": <0-100 compatibility>, "why": "<one short sentence>",
+ "explanation": "<two or three sentences for the staff reviewing this match>",
+ "alternatives": [{"buddy": "<exact name>", "score": <0-100>, "reason": "<one sentence>"}, {"buddy": "<exact name>", "score": <0-100>, "reason": "<one sentence>"}]}`
+
+const buddyPrompt = (buddy, assigned) => `A school pairs new students with a student "buddy".
+Write a two or three sentence note for staff about this buddy's current assignments: who they are paired with, why those pairings work or are weak, and whether they have room for more students (two is a full load).
+
+Buddy:
+${describe(buddy)}
+
+Assigned new students:
+${assigned.length ? assigned.map((m) => `- ${m.student.name} (score ${m.score}): ${m.why}`).join("\n") : "- none yet"}
+
+Reply with JSON only: {"explanation": "<two or three sentences>"}`
+
+// ---------- Run ----------
+const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })
+const byName = (list, name) => list.find((c) => c.name.toLowerCase() === String(name || "").trim().toLowerCase())
+const matches = []
+
+console.log(`Matching ${newStudents.length} new students with ${buddies.length} buddies using ${MODEL}...\n`)
+for (const s of newStudents) {
+    const candidates = [...buddies]
+        .sort((x, y) => ruleScore(s, y) - 5 * load.get(y.name).length - (ruleScore(s, x) - 5 * load.get(x.name).length))
+        .slice(0, SHORTLIST)
+    const result = await tryAI(matchPrompt(s, candidates), s.name)
+
+    const b = byName(candidates, result?.buddy) || candidates[0]
+    const score = Math.round(Math.max(0, Math.min(100, Number(result?.score) || ruleScore(s, b))))
+    const why = result?.why || ruleWhy(s, b)
+    const explanation = result?.explanation || why
+
+    // Other compatible buddies: the AI's picks if valid, otherwise the next best by rule score.
+    const alts = []
+    for (const a of Array.isArray(result?.alternatives) ? result.alternatives : []) {
+        const c = byName(candidates, a?.buddy)
+        if (c && c !== b && !alts.some((x) => x.c === c)) alts.push({ c, score: Math.round(Number(a.score) || ruleScore(s, c)), reason: a.reason || ruleWhy(s, c) })
+    }
+    for (const c of candidates) {
+        if (alts.length >= 2) break
+        if (c !== b && !alts.some((x) => x.c === c)) alts.push({ c, score: ruleScore(s, c), reason: ruleWhy(s, c) })
     }
 
-    const b = candidates.find((c) => c.name.toLowerCase() === String(result?.buddy || "").trim().toLowerCase()) || candidates[0]
-    const l = shared(s.langs, b.langs), c = shared(s.clubs, b.clubs)
-    const fallbackWhy = `Both speak ${l.join(", ") || "no common language"}` + (c.length ? `, and share ${c.join(", ")}.` : ", with no shared activities.")
-    const score = Math.round(Math.max(0, Math.min(100, Number(result?.score) || ruleScore(s, b))))
-    const why = result?.why || fallbackWhy
-    load.set(b.name, load.get(b.name) + 1)
-
-    matches.push([
-        `${s.name} – ${b.name}`, slug(`${s.name} ${b.name}`), score, score < FLAG_BELOW, today, why, result?.explanation || why,
+    const l = shared(s.langs, b.langs), cl = shared(s.clubs, b.clubs)
+    const m = { student: s, buddy: b, score, why, explanation }
+    load.get(b.name).push(m)
+    matches.push({ ...m, row: [
+        `${s.name} – ${b.name}`, slug(`${s.name} ${b.name}`), score, score < FLAG_BELOW, today, why, explanation,
         s.name, s.grade, s.langs.join(", "), s.clubs.join(", "), s.bio,
         b.name, b.grade, b.langs.join(", "), b.clubs.join(", "), b.bio,
-        l.join(", ") || "None", c.join(", ") || "None",
-    ])
+        l.join(", ") || "None", cl.join(", ") || "None",
+        s.interests, s.background, s.newness, b.interests, b.background, b.newness,
+        alts.map((a) => `${a.c.name}|${a.score}|${String(a.reason).replace(/[|;]/g, ",")}`).join(" ;; "),
+    ] })
     console.log(`${String(score).padStart(3)}  ${s.name} → ${b.name}   ${why}`)
 }
 
-matches.sort((x, y) => y[2] - x[2])
+// A 2-3 sentence "Why" for every student, shown beside Status on the Students page.
+console.log("\nWriting buddy notes...")
+const notes = new Map()
+for (const m of matches) notes.set(m.student.name, `Paired with ${m.buddy.name} (${m.score}). ${m.explanation}`)
+for (const b of buddies) {
+    const assigned = load.get(b.name)
+    const result = await tryAI(buddyPrompt(b, assigned), b.name)
+    notes.set(b.name, result?.explanation || (assigned.length
+        ? `Suggested buddy for ${assigned.map((m) => `${m.student.name} (${m.score})`).join(" and ")}. ${assigned.map((m) => m.why).join(" ")}`
+        : `Not assigned yet. Speaks ${b.langs.join(", ")} and is in ${b.clubs.join(", ") || "no clubs"}, so is available for the next new student.`))
+}
+
+matches.sort((x, y) => y.score - x.score)
 writeFileSync(output, toCsv([
     ["Title", "Slug", "Score", "Flagged", "Suggested", "Why", "Explanation",
      "New Student", "New Grade", "New Languages", "New Clubs", "New Bio",
      "Buddy", "Buddy Grade", "Buddy Languages", "Buddy Clubs", "Buddy Bio",
-     "Shared Languages", "Shared Clubs"],
-    ...matches,
+     "Shared Languages", "Shared Clubs",
+     "New Interests", "New Background", "New Newness", "Buddy Interests", "Buddy Background", "Buddy Newness", "Alternatives"],
+    ...matches.map((m) => m.row),
 ]))
-console.log(`\nSaved ${matches.length} matches to ${output}. Import it into the Framer "Matches" collection.`)
+writeFileSync(studentsOut, toCsv([
+    ["Name", "Slug", "Grade", "Role", "Languages", "Clubs", "Status", "Explanation"],
+    ...students.map((s) => [
+        s.name, slug(s.name), s.grade, s.role === "new" ? "New" : "Buddy", s.langs.join(", "), s.clubs.join(", "),
+        s.role === "new" ? "Matched, awaiting approval" : load.get(s.name).length ? "Suggested" : "Available",
+        notes.get(s.name),
+    ]),
+]))
+console.log(`\nSaved ${matches.length} matches to ${output} (import into Framer "Matches").`)
+console.log(`Saved ${students.length} students to ${studentsOut} (import into Framer "Students").`)

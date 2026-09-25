@@ -25,8 +25,8 @@ const btn = (primary: boolean, small = false) => ({
 export default function ReviewMatch(props) {
     const p = props
     const [decision, setDecision] = useState<null | "approved" | "declined">(null)
-    const [popup, setPopup] = useState<null | { title: string; text: string; good: boolean }>(null)
-    const [assigned, setAssigned] = useState<string | null>(null)
+    const [popup, setPopup] = useState(null)
+    const [assigned, setAssigned] = useState("")
     const split = (s: string) => (s || "").split(",").map((x) => x.trim()).filter(Boolean)
     const mark = (list: string, shared: string) => {
         const hits = split(shared)
@@ -51,10 +51,21 @@ export default function ReviewMatch(props) {
         setPopup({ title: "✓ Buddy reassigned", text: `${p.newStudent} is now paired with ${name}.`, good: true })
     }
     // "Name|score|reason ;; Name|score|reason"
-    const alternatives = (p.alternatives || "").split(";;").map((x) => x.trim()).filter(Boolean).map((x) => {
-        const [name, score, reason] = x.split("|").map((y) => (y || "").trim())
-        return { name, score: Number(score) || 0, reason }
-    })
+    const alternatives = []
+    for (const part of String(p.alternatives || "").split(";;")) {
+        const bits = part.split("|")
+        if (bits.length < 3) continue
+        alternatives.push({ name: bits[0].trim(), score: Number(bits[1]) || 0, reason: bits[2].trim() })
+    }
+    const extraRows = []
+    const extras = [
+        ["Interests", p.newInterests, p.buddyInterests],
+        ["Family / background", p.newBackground, p.buddyBackground],
+        ["Prior experience being new", p.newNewness, p.buddyNewness],
+    ]
+    for (const e of extras) {
+        if (e[1] || e[2]) extraRows.push([e[0], e[1] || "—", e[2] || "—"])
+    }
     const card = { background: C.surface, border: `1px solid ${C.borderStrong}`, borderRadius: 2, padding: 24 }
     const label = { fontSize: 11, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: C.accent, fontWeight: 700 }
     const profile = (tag, name, grade, bio) => (
@@ -69,11 +80,7 @@ export default function ReviewMatch(props) {
         ["Grade", `Grade ${p.newGrade}`, `Grade ${p.buddyGrade}`],
         ["Languages", mark(p.newLanguages, p.sharedLanguages), mark(p.buddyLanguages, p.sharedLanguages)],
         ["Clubs & activities", mark(p.newClubs, p.sharedClubs), mark(p.buddyClubs, p.sharedClubs)],
-        ...[
-            ["Interests", p.newInterests, p.buddyInterests],
-            ["Family / background", p.newBackground, p.buddyBackground],
-            ["Prior experience being new", p.newNewness, p.buddyNewness],
-        ].filter(([, a, b]) => a || b).map(([k, a, b]) => [k, a || "—", b || "—"]),
+        ...extraRows,
         ["In common", <span style={{ color: C.accent, fontStyle: "italic" }}>{p.sharedLanguages}</span>, <span style={{ color: C.accent, fontStyle: "italic" }}>{p.sharedClubs}</span>],
     ]
 

@@ -46,7 +46,7 @@ function useFilter(ref, apply) {
 }
 
 const COLS: [string, number][] = [
-    ["Name", 18], ["Grade", 6], ["Languages", 26], ["Clubs & activities", 20], ["Role", 8], ["Status", 22],
+    ["Name", 13], ["Grade", 5], ["Languages", 17], ["Clubs & activities", 14], ["Role", 6], ["Status", 13], ["Why", 32],
 ]
 
 /**
@@ -56,7 +56,7 @@ const COLS: [string, number][] = [
  * @framerSupportedLayoutHeight auto
  */
 export default function StudentRow(props) {
-    const { header, name, grade, languages, clubs, role, status, style } = props
+    const { header, name, grade, languages, clubs, role, status, explanation, style } = props
     const ref = useRef(null)
     useFilter(ref, (item, f) => {
         if (header) return
@@ -68,16 +68,16 @@ export default function StudentRow(props) {
     useEffect(() => {
         if (header) return
         const all = ((window as any).__verbundStudents ||= new Map())
-        all.set(name, { name, grade, languages, clubs, role, status })
+        all.set(name, { name, grade, languages, clubs, role, status, explanation })
         return () => { all.delete(name) }
-    }, [header, name, grade, languages, clubs, role, status])
-    const cells = header ? COLS.map((c) => c[0]) : [name, String(grade), languages, clubs, role, status]
+    }, [header, name, grade, languages, clubs, role, status, explanation])
+    const cells = header ? COLS.map((c) => c[0]) : [name, String(grade), languages, clubs, role, status, explanation]
     const statusColor = /matched|reassigned|approved/i.test(status) ? C.good : C.soft
     return (
         <div ref={ref} style={{ ...style, width: "100%", fontFamily: body, color: C.ink }}>
             <div style={inner}>
                 <div style={{
-                    display: "flex", gap: 12, alignItems: "center",
+                    display: "flex", gap: 12, alignItems: header ? "center" : "flex-start",
                     padding: header ? "8px 0" : "12px 0",
                     borderBottom: header ? `2px solid ${C.ink}` : `1px solid ${C.borderStrong}`,
                     fontSize: header ? 11 : 14, fontWeight: header ? 700 : 400,
@@ -86,8 +86,10 @@ export default function StudentRow(props) {
                     {cells.map((text, i) => (
                         <div key={i} style={{
                             flex: `${COLS[i][1]} 1 0`, minWidth: 0,
-                            color: header ? C.ink : i === 2 || i === 3 ? C.soft : i === 5 ? statusColor : C.ink,
-                            fontStyle: !header && i === 5 ? "italic" : "normal",
+                            color: header ? C.ink : i === 2 || i === 3 || i === 6 ? C.soft : i === 5 ? statusColor : C.ink,
+                            fontStyle: !header && (i === 5 || i === 6) ? "italic" : "normal",
+                            fontSize: !header && i === 6 ? 13 : undefined,
+                            lineHeight: 1.5,
                         }}>
                             {text}
                         </div>
@@ -106,4 +108,8 @@ addPropertyControls(StudentRow, {
     clubs: { type: ControlType.String, defaultValue: "Basketball", hidden: (p) => p.header },
     role: { type: ControlType.String, defaultValue: "New", hidden: (p) => p.header },
     status: { type: ControlType.String, defaultValue: "Matched, awaiting approval", hidden: (p) => p.header },
+    explanation: {
+        type: ControlType.String, title: "Why", displayTextArea: true, hidden: (p) => p.header,
+        defaultValue: "Paired with Aayush Karade (92). They share all four languages, Spanish, Marathi, Hindi and English, and both play basketball. Aayush moved here from Germany, so he knows first-hand what arriving somewhere new feels like.",
+    },
 })

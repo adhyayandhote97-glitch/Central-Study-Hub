@@ -25,7 +25,8 @@ const btn = (primary: boolean, small = false) => ({
 export default function ReviewMatch(props) {
     const p = props
     const [decision, setDecision] = useState<null | "approved" | "declined">(null)
-    const [popup, setPopup] = useState(false)
+    const [popup, setPopup] = useState<null | { title: string; text: string; good: boolean }>(null)
+    const [assigned, setAssigned] = useState<string | null>(null)
     const split = (s: string) => (s || "").split(",").map((x) => x.trim()).filter(Boolean)
     const mark = (list: string, shared: string) => {
         const hits = split(shared)
@@ -38,7 +39,22 @@ export default function ReviewMatch(props) {
             </span>
         ))
     }
-    const decide = (d) => { setDecision(d); setPopup(true) }
+    const decide = (d) => {
+        setDecision(d)
+        setPopup(d === "approved"
+            ? { title: "✓ Match approved", text: `${p.newStudent} and ${p.buddy} will be introduced this week.`, good: true }
+            : { title: "Match declined", text: `${p.newStudent} will be offered a different buddy.`, good: false })
+    }
+    const assign = (name) => {
+        setAssigned(name)
+        setDecision("approved")
+        setPopup({ title: "✓ Buddy reassigned", text: `${p.newStudent} is now paired with ${name}.`, good: true })
+    }
+    // "Name|score|reason ;; Name|score|reason"
+    const alternatives = (p.alternatives || "").split(";;").map((x) => x.trim()).filter(Boolean).map((x) => {
+        const [name, score, reason] = x.split("|").map((y) => (y || "").trim())
+        return { name, score: Number(score) || 0, reason }
+    })
     const card = { background: C.surface, border: `1px solid ${C.borderStrong}`, borderRadius: 2, padding: 24 }
     const label = { fontSize: 11, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: C.accent, fontWeight: 700 }
     const profile = (tag, name, grade, bio) => (
@@ -53,6 +69,11 @@ export default function ReviewMatch(props) {
         ["Grade", `Grade ${p.newGrade}`, `Grade ${p.buddyGrade}`],
         ["Languages", mark(p.newLanguages, p.sharedLanguages), mark(p.buddyLanguages, p.sharedLanguages)],
         ["Clubs & activities", mark(p.newClubs, p.sharedClubs), mark(p.buddyClubs, p.sharedClubs)],
+        ...[
+            ["Interests", p.newInterests, p.buddyInterests],
+            ["Family / background", p.newBackground, p.buddyBackground],
+            ["Prior experience being new", p.newNewness, p.buddyNewness],
+        ].filter(([, a, b]) => a || b).map(([k, a, b]) => [k, a || "—", b || "—"]),
         ["In common", <span style={{ color: C.accent, fontStyle: "italic" }}>{p.sharedLanguages}</span>, <span style={{ color: C.accent, fontStyle: "italic" }}>{p.sharedClubs}</span>],
     ]
 
@@ -65,7 +86,7 @@ export default function ReviewMatch(props) {
 
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 24, padding: "16px 0 24px", borderBottom: `1px solid ${C.borderStrong}` }}>
                     <div>
-                        <h1 style={{ fontFamily: display, fontSize: 28, margin: 0, lineHeight: 1.2 }}>{p.newStudent} – {p.buddy}</h1>
+                        <h1 style={{ fontFamily: display, fontSize: 28, margin: 0, lineHeight: 1.2 }}>{p.newStudent} – {assigned || p.buddy}</h1>
                         <p style={{ margin: "8px 0 0", color: C.soft, fontSize: 15, fontStyle: "italic" }}>
                             Grade {p.newGrade} &amp; Grade {p.buddyGrade} — Suggested {p.suggested} by the matching model
                         </p>
@@ -73,7 +94,7 @@ export default function ReviewMatch(props) {
                     <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                         {decision ? (
                             <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: decision === "approved" ? C.good : C.accent }}>
-                                {decision === "approved" ? "✓ Approved" : "Declined"}
+                                {assigned ? "✓ Reassigned" : decision === "approved" ? "✓ Approved" : "Declined"}
                             </span>
                         ) : (
                             <>
@@ -108,21 +129,44 @@ export default function ReviewMatch(props) {
                         ))}
                     </div>
                 </div>
+
+                {alternatives.length > 0 && (
+                    <>
+                        <div style={{ margin: "32px 0 0", paddingBottom: 8, borderBottom: `1px solid ${C.ink}`, fontSize: 14, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                            Other compatible buddies
+                        </div>
+                        {alternatives.map((a) => (
+                            <div key={a.name} style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 24, padding: "16px 0", borderBottom: `1px solid ${C.borderStrong}` }}>
+                                <div style={{ width: 88, flexShrink: 0 }}>
+                                    <div style={{ fontFamily: display, fontSize: 26, fontWeight: 700, lineHeight: 1 }}>{a.score}</div>
+                                    <div style={{ height: 2, background: C.ink, marginTop: 8, width: `${a.score}%` }} />
+                                </div>
+                                <div style={{ flex: "1 1 300px", minWidth: 0 }}>
+                                    <strong style={{ fontSize: 16 }}>{a.name}</strong>
+                                    <div style={{ fontStyle: "italic", color: C.soft, fontSize: 14, marginTop: 4 }}>{a.reason}</div>
+                                </div>
+                                {assigned === a.name ? (
+                                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: C.good }}>✓ Assigned</span>
+                                ) : !decision ? (
+                                    <button style={btn(false, true)} onClick={() => assign(a.name)}>Assign instead</button>
+                                ) : null}
+                            </div>
+                        ))}
+                    </>
+                )}
             </div>
 
             {popup && (
-                <div onClick={() => setPopup(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 16 }}>
+                <div onClick={() => setPopup(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 16 }}>
                     <div onClick={(e) => e.stopPropagation()} style={{ ...card, maxWidth: 420, width: "100%", textAlign: "center", border: `1px solid ${C.ink}` }}>
-                        <h2 style={{ fontFamily: display, fontSize: 24, margin: 0, color: decision === "approved" ? C.good : C.accent }}>
-                            {decision === "approved" ? "✓ Match approved" : "Match declined"}
+                        <h2 style={{ fontFamily: display, fontSize: 24, margin: 0, color: popup.good ? C.good : C.accent }}>
+                            {popup.title}
                         </h2>
                         <p style={{ margin: "8px 0 24px", color: C.soft, fontStyle: "italic" }}>
-                            {decision === "approved"
-                                ? `${p.newStudent} and ${p.buddy} will be introduced this week.`
-                                : `${p.newStudent} will be offered a different buddy.`}
+                            {popup.text}
                         </p>
                         <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-                            <button style={btn(false)} onClick={() => setPopup(false)}>Stay here</button>
+                            <button style={btn(false)} onClick={() => setPopup(null)}>Stay here</button>
                             <a href={p.backLink} style={btn(true)}>Back to matching</a>
                         </div>
                     </div>
@@ -148,5 +192,16 @@ addPropertyControls(ReviewMatch, {
     buddyBio: { type: ControlType.String, title: "Buddy bio", displayTextArea: true, defaultValue: "Moved to India from Germany and has no siblings. Volunteered to be a buddy this term, having gone through the experience of arriving somewhere new himself." },
     sharedLanguages: { type: ControlType.String, title: "Shared languages", defaultValue: "Spanish, Marathi, Hindi, English" },
     sharedClubs: { type: ControlType.String, title: "Shared clubs", defaultValue: "Basketball" },
+    newInterests: { type: ControlType.String, title: "New interests", defaultValue: "Basketball, music" },
+    newBackground: { type: ControlType.String, title: "New background", defaultValue: "Lived in Pune his whole life, no siblings" },
+    newNewness: { type: ControlType.String, title: "New newness", defaultValue: "Never moved before - this is Aarav's first time navigating something unfamiliar" },
+    buddyInterests: { type: ControlType.String, title: "Buddy interests", defaultValue: "Basketball, settling into a new country" },
+    buddyBackground: { type: ControlType.String, title: "Buddy background", defaultValue: "Moved from Germany, no siblings" },
+    buddyNewness: { type: ControlType.String, title: "Buddy newness", defaultValue: "Moved internationally himself, understands what it's like to be the new one" },
+    alternatives: {
+        type: ControlType.String,
+        displayTextArea: true,
+        defaultValue: "Abhijit Tawri|88|Both speak Spanish, Marathi, Hindi, English, and share Basketball. ;; Purnendu Malani|78|Both speak Spanish, Marathi, Hindi, English, with no shared activities.",
+    },
     backLink: { type: ControlType.Link, title: "Back link", defaultValue: "/matching" },
 })

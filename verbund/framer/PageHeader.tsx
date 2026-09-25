@@ -25,8 +25,8 @@ export default function PageHeader(props) {
     const { title, subtitle, secondaryLabel, secondaryLink, secondaryAction, primaryLabel, primaryLink, sectionTitle, style } = props
     const exportCsv = () => {
         const rows = [...(((window as any).__verbundStudents || new Map()).values())]
-        const csv = [["Name", "Grade", "Languages", "Clubs", "Role", "Status"],
-            ...rows.map((r) => [r.name, r.grade, r.languages, r.clubs, r.role, r.status])]
+        const csv = [["Name", "Grade", "Languages", "Clubs", "Role", "Status", "Explanation"],
+            ...rows.map((r) => [r.name, r.grade, r.languages, r.clubs, r.role, r.status, r.explanation])]
             .map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n")
         const a = document.createElement("a")
         a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }))

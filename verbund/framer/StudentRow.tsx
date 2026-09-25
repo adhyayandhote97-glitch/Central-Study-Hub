@@ -17,6 +17,20 @@ const btn = (primary: boolean, small = false) => ({
     cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" as const,
 })
 
+// Temporarily overrides one inline style on a list item, remembering Framer's own value.
+function setStyle(el, prop, value) {
+    const key = "vb" + prop
+    if (value == null) {
+        if (key in el.dataset) {
+            el.style[prop] = el.dataset[key]
+            delete el.dataset[key]
+        }
+    } else {
+        if (!(key in el.dataset)) el.dataset[key] = el.style[prop]
+        el.style[prop] = value
+    }
+}
+
 // Listens to the FilterBar and hides / reorders this row inside its CMS list.
 function useFilter(ref, apply) {
     useEffect(() => {
@@ -48,7 +62,7 @@ export default function StudentRow(props) {
         if (header) return
         const hide = (f.grade && f.grade !== "all" && String(grade) !== f.grade) ||
             (f.role && f.role !== "all" && String(role).toLowerCase() !== f.role)
-        item.style.display = hide ? "none" : ""
+        setStyle(item, "display", hide ? "none" : null)
     })
     // Remember every row so the "Export CSV" button can download them.
     useEffect(() => {

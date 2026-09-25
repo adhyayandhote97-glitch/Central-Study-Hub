@@ -17,6 +17,20 @@ const btn = (primary: boolean, small = false) => ({
     cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" as const,
 })
 
+// Temporarily overrides one inline style on a list item, remembering Framer's own value.
+function setStyle(el, prop, value) {
+    const key = "vb" + prop
+    if (value == null) {
+        if (key in el.dataset) {
+            el.style[prop] = el.dataset[key]
+            delete el.dataset[key]
+        }
+    } else {
+        if (!(key in el.dataset)) el.dataset[key] = el.style[prop]
+        el.style[prop] = value
+    }
+}
+
 // Listens to the FilterBar and hides / reorders this row inside its CMS list.
 function useFilter(ref, apply) {
     useEffect(() => {
@@ -41,8 +55,9 @@ export default function MatchRow(props) {
     const [approved, setApproved] = useState(false)
     const ref = useRef(null)
     useFilter(ref, (item, f) => {
-        item.style.display = f.grade && f.grade !== "all" && String(grade) !== f.grade ? "none" : ""
-        item.style.order = f.sort ? String(f.sort === "low" ? score : -score) : ""
+        const hide = f.grade && f.grade !== "all" && String(grade) !== f.grade
+        setStyle(item, "display", hide ? "none" : null)
+        setStyle(item, "order", f.sort ? String(f.sort === "low" ? score : -score) : null)
     })
     const person = (label, name) => (
         <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 150 }}>

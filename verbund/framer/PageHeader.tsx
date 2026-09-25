@@ -1,9 +1,10 @@
 import { addPropertyControls, ControlType } from "framer"
 
 // Verbund design tokens
+// (colours come from the Masthead's light/dark theme, with light values as fallback)
 const C = {
-    bg: "#F7F5F0", surface: "#FFFFFF", border: "#DEDACD", borderStrong: "#B9B29B",
-    ink: "#1C1A16", soft: "#5E594C", faint: "#8E8874", accent: "#9E2B25", good: "#3C6B4A",
+    bg: "var(--vb-bg, #F7F5F0)", surface: "var(--vb-surface, #FFFFFF)", border: "var(--vb-border, #DEDACD)", borderStrong: "var(--vb-border-strong, #B9B29B)",
+    ink: "var(--vb-ink, #1C1A16)", soft: "var(--vb-soft, #5E594C)", faint: "var(--vb-faint, #8E8874)", accent: "var(--vb-accent, #9E2B25)", good: "var(--vb-good, #3C6B4A)",
 }
 const display = '"Playfair Display", Georgia, serif'
 const body = '"Source Serif 4", Georgia, serif'
@@ -40,7 +41,7 @@ export default function PageHeader(props) {
                 ? <a href={link} target={/^https?:/.test(link) ? "_blank" : undefined} rel="noreferrer" style={btn(primary)}>{label}</a>
                 : <button style={btn(primary)}>{label}</button>
     return (
-        <div style={{ ...style, width: "100%", fontFamily: body, color: C.ink }}>
+        <div style={{ ...style, width: "100%", background: C.bg, fontFamily: body, color: C.ink }}>
             <div style={inner}>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 24, padding: "32px 0 24px", borderBottom: `1px solid ${C.borderStrong}` }}>
                     <div>

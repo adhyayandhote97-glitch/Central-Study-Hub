@@ -2,9 +2,10 @@ import { useState, useEffect } from "react"
 import { addPropertyControls, ControlType } from "framer"
 
 // Verbund design tokens
+// (colours come from the Masthead's light/dark theme, with light values as fallback)
 const C = {
-    bg: "#F7F5F0", surface: "#FFFFFF", border: "#DEDACD", borderStrong: "#B9B29B",
-    ink: "#1C1A16", soft: "#5E594C", faint: "#8E8874", accent: "#9E2B25", good: "#3C6B4A",
+    bg: "var(--vb-bg, #F7F5F0)", surface: "var(--vb-surface, #FFFFFF)", border: "var(--vb-border, #DEDACD)", borderStrong: "var(--vb-border-strong, #B9B29B)",
+    ink: "var(--vb-ink, #1C1A16)", soft: "var(--vb-soft, #5E594C)", faint: "var(--vb-faint, #8E8874)", accent: "var(--vb-accent, #9E2B25)", good: "var(--vb-good, #3C6B4A)",
 }
 const body = '"Source Serif 4", Georgia, serif'
 const inner = { maxWidth: 1040, margin: "0 auto", padding: "0 clamp(16px, 4vw, 32px)", boxSizing: "border-box" as const }
@@ -46,7 +47,7 @@ export default function FilterBar(props) {
     const label = (text) => <span>{text}</span>
 
     return (
-        <div style={{ ...style, width: "100%", fontFamily: body }}>
+        <div style={{ ...style, width: "100%", background: C.bg, fontFamily: body }}>
             <div style={inner}>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16, padding: "24px 0 16px", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em", color: C.soft }}>
                     {label("Grade")}

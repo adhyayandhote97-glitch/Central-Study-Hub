@@ -2,9 +2,10 @@ import { useState } from "react"
 import { addPropertyControls, ControlType } from "framer"
 
 // Verbund design tokens
+// (colours come from the Masthead's light/dark theme, with light values as fallback)
 const C = {
-    bg: "#F7F5F0", surface: "#FFFFFF", border: "#DEDACD", borderStrong: "#B9B29B",
-    ink: "#1C1A16", soft: "#5E594C", faint: "#8E8874", accent: "#9E2B25", good: "#3C6B4A",
+    bg: "var(--vb-bg, #F7F5F0)", surface: "var(--vb-surface, #FFFFFF)", border: "var(--vb-border, #DEDACD)", borderStrong: "var(--vb-border-strong, #B9B29B)",
+    ink: "var(--vb-ink, #1C1A16)", soft: "var(--vb-soft, #5E594C)", faint: "var(--vb-faint, #8E8874)", accent: "var(--vb-accent, #9E2B25)", good: "var(--vb-good, #3C6B4A)",
 }
 const display = '"Playfair Display", Georgia, serif'
 const body = '"Source Serif 4", Georgia, serif'
@@ -85,7 +86,7 @@ export default function ReviewMatch(props) {
     ]
 
     return (
-        <div style={{ ...p.style, width: "100%", fontFamily: body, color: C.ink, lineHeight: 1.55 }}>
+        <div style={{ ...p.style, width: "100%", background: C.bg, fontFamily: body, color: C.ink, lineHeight: 1.55 }}>
             <div style={{ ...inner, paddingBottom: 40 }}>
                 <a href={p.backLink} style={{ display: "inline-block", marginTop: 24, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em", color: C.soft, textDecoration: "none" }}>
                     ← Back to matching

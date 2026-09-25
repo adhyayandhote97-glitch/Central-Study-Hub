@@ -38,7 +38,7 @@ const FEATURES = [
  * @framerSupportedLayoutHeight auto
  */
 export default function Homepage(props) {
-    const { headline, subheadline, dashboardLink, formLink, stat1, stat1Label, stat2, stat2Label, stat3, stat3Label, style } = props
+    const { headline, subheadline, dashboardLink, formLink, stat1, stat1Label, stat2, stat2Label, stat3, stat3Label, showQuote, showFeatures, style } = props
     const stats = [[stat1, stat1Label], [stat2, stat2Label], [stat3, stat3Label]]
 
     return (
@@ -96,6 +96,8 @@ export default function Homepage(props) {
                     ))}
                 </div>
 
+                {showQuote && (
+                    <>
                 {/* Pull quote */}
                 <div style={{ margin: "56px 0 0", padding: "32px 0", borderTop: `1px solid ${C.ink}`, borderBottom: `1px solid ${C.ink}`, textAlign: "center" }}>
                     <p style={{ fontFamily: display, fontSize: "clamp(22px, 3vw, 30px)", lineHeight: 1.3, margin: "0 auto", maxWidth: 760 }}>
@@ -104,6 +106,11 @@ export default function Homepage(props) {
                     <p style={{ margin: "12px 0 0", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em", color: C.faint }}>Why we built Verbund</p>
                 </div>
 
+                    </>
+                )}
+
+                {showFeatures && (
+                    <>
                 {/* Features */}
                 <div style={sectionHead}>Why schools use it</div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 400px), 1fr))", gap: 24 }}>
@@ -114,6 +121,9 @@ export default function Homepage(props) {
                         </div>
                     ))}
                 </div>
+
+                    </>
+                )}
 
                 {/* Closing call to action */}
                 <div style={{ margin: "56px 0 0", padding: "40px 0 56px", borderTop: `3px double ${C.ink}`, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 24 }}>
@@ -142,4 +152,6 @@ addPropertyControls(Homepage, {
     stat2Label: { type: ControlType.String, title: "Label 2", defaultValue: "Matches suggested" },
     stat3: { type: ControlType.String, title: "Number 3", defaultValue: "4" },
     stat3Label: { type: ControlType.String, title: "Label 3", defaultValue: "Flagged for review" },
+    showQuote: { type: ControlType.Boolean, title: "Show quote", defaultValue: false },
+    showFeatures: { type: ControlType.Boolean, title: "Show 'Why schools use it'", defaultValue: false },
 })

@@ -32,6 +32,13 @@ const FEATURES = [
     ["Staff stay in charge", "Nothing is final until a teacher approves it. The AI suggests; people decide."],
 ]
 
+// Only follow real URLs. Anything else (empty, or a Framer page-picker reference that a
+// plain <a> can't open) falls back to the default path, so buttons never lead to a 404.
+const toHref = (value, fallback) => {
+    const v = typeof value === "string" ? value.trim() : ""
+    return /^(\/|https?:|mailto:|#)/.test(v) ? v : fallback
+}
+
 /**
  * The public homepage: what Verbund is, how it works, and a way into the staff dashboard.
  * @framerSupportedLayoutWidth any
@@ -40,6 +47,8 @@ const FEATURES = [
 export default function Homepage(props) {
     const { headline, subheadline, dashboardLink, formLink, stat1, stat1Label, stat2, stat2Label, stat3, stat3Label, showQuote, showFeatures, style } = props
     const stats = [[stat1, stat1Label], [stat2, stat2Label], [stat3, stat3Label]]
+    const dashHref = toHref(dashboardLink, "/dashboard")
+    const formHref = toHref(formLink, "")
 
     return (
         <div style={{ ...style, width: "100%", background: C.bg, fontFamily: body, color: C.ink, lineHeight: 1.55 }}>
@@ -54,7 +63,7 @@ export default function Homepage(props) {
                         </div>
                         <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.18em", color: C.faint, marginTop: 4 }}>Buddy Matching Gazette</div>
                     </div>
-                    <a href={dashboardLink} style={btn(false, true)}>Staff dashboard →</a>
+                    <a href={dashHref} style={btn(false, true)}>Staff dashboard →</a>
                 </div>
             </div>
 
@@ -68,8 +77,8 @@ export default function Homepage(props) {
                     <div>
                         <p style={{ margin: 0, fontSize: 18, fontStyle: "italic", color: C.soft }}>{subheadline}</p>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 24 }}>
-                            <a href={dashboardLink} style={btn(true)}>Open staff dashboard</a>
-                            {formLink && <a href={formLink} target="_blank" rel="noreferrer" style={btn(false)}>Student sign-up form</a>}
+                            <a href={dashHref} style={btn(true)}>Open staff dashboard</a>
+                            {formHref && <a href={formHref} target="_blank" rel="noreferrer" style={btn(false)}>Student sign-up form</a>}
                         </div>
                     </div>
                 </div>
@@ -131,7 +140,7 @@ export default function Homepage(props) {
                         <h2 style={{ fontFamily: display, fontSize: 28, margin: 0 }}>Ready to review this term's matches?</h2>
                         <p style={{ margin: "6px 0 0", color: C.soft, fontStyle: "italic" }}>Suggestions are waiting for staff approval.</p>
                     </div>
-                    <a href={dashboardLink} style={btn(true)}>Go to the dashboard</a>
+                    <a href={dashHref} style={btn(true)}>Go to the dashboard</a>
                 </div>
             </div>
         </div>
@@ -144,8 +153,8 @@ addPropertyControls(Homepage, {
         type: ControlType.String, displayTextArea: true,
         defaultValue: "Verbund pairs each new student with a buddy who shares their languages and interests. An AI model suggests the matches and explains them; staff approve every one.",
     },
-    dashboardLink: { type: ControlType.Link, title: "Dashboard link", defaultValue: "/dashboard" },
-    formLink: { type: ControlType.Link, title: "Sign-up form link", defaultValue: "" },
+    dashboardLink: { type: ControlType.String, title: "Dashboard path", defaultValue: "/dashboard" },
+    formLink: { type: ControlType.String, title: "Sign-up form URL (https://…)", defaultValue: "" },
     stat1: { type: ControlType.String, title: "Number 1", defaultValue: "14" },
     stat1Label: { type: ControlType.String, title: "Label 1", defaultValue: "Students this term" },
     stat2: { type: ControlType.String, title: "Number 2", defaultValue: "9" },

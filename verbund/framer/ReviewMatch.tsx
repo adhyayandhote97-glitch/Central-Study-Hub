@@ -18,6 +18,13 @@ const btn = (primary: boolean, small = false) => ({
     cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" as const,
 })
 
+// Only follow real URLs. Anything else (empty, or a Framer page-picker reference that a
+// plain <a> can't open) falls back to the default path, so buttons never lead to a 404.
+const toHref = (value, fallback) => {
+    const v = typeof value === "string" ? value.trim() : ""
+    return /^(\/|https?:|mailto:|#)/.test(v) ? v : fallback
+}
+
 /**
  * The whole Review page for one match. Put it on the Matches CMS page and connect each property to a CMS field.
  * @framerSupportedLayoutWidth any
@@ -25,6 +32,7 @@ const btn = (primary: boolean, small = false) => ({
  */
 export default function ReviewMatch(props) {
     const p = props
+    const backHref = toHref(p.backLink, "/matching")
     const [decision, setDecision] = useState<null | "approved" | "declined">(null)
     const [popup, setPopup] = useState(null)
     const [assigned, setAssigned] = useState("")
@@ -88,7 +96,7 @@ export default function ReviewMatch(props) {
     return (
         <div style={{ ...p.style, width: "100%", background: C.bg, fontFamily: body, color: C.ink, lineHeight: 1.55 }}>
             <div style={{ ...inner, paddingBottom: 40 }}>
-                <a href={p.backLink} style={{ display: "inline-block", marginTop: 24, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em", color: C.soft, textDecoration: "none" }}>
+                <a href={backHref} style={{ display: "inline-block", marginTop: 24, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em", color: C.soft, textDecoration: "none" }}>
                     ← Back to matching
                 </a>
 
@@ -175,7 +183,7 @@ export default function ReviewMatch(props) {
                         </p>
                         <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
                             <button style={btn(false)} onClick={() => setPopup(null)}>Stay here</button>
-                            <a href={p.backLink} style={btn(true)}>Back to matching</a>
+                            <a href={backHref} style={btn(true)}>Back to matching</a>
                         </div>
                     </div>
                 </div>
@@ -211,5 +219,5 @@ addPropertyControls(ReviewMatch, {
         displayTextArea: true,
         defaultValue: "Abhijit Tawri|88|Both speak Spanish, Marathi, Hindi, English, and share Basketball. ;; Purnendu Malani|78|Both speak Spanish, Marathi, Hindi, English, with no shared activities.",
     },
-    backLink: { type: ControlType.Link, title: "Back link", defaultValue: "/matching" },
+    backLink: { type: ControlType.String, title: "Back path", defaultValue: "/matching" },
 })

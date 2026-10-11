@@ -36,6 +36,13 @@ function setTheme(theme) {
     try { localStorage.setItem("verbund-theme", theme) } catch (e) {}
 }
 
+// Only follow real URLs. Anything else (empty, or a Framer page-picker reference that a
+// plain <a> can't open) falls back to the default path, so buttons never lead to a 404.
+const toHref = (value, fallback) => {
+    const v = typeof value === "string" ? value.trim() : ""
+    return /^(\/|https?:|mailto:|#)/.test(v) ? v : fallback
+}
+
 /**
  * Top bar with logo, nav and the light/dark toggle. Put one at the top of every page and pick the active tab.
  * @framerSupportedLayoutWidth any
@@ -53,8 +60,8 @@ export default function Masthead(props) {
     const choose = (t) => { setTheme(t); setThemeState(t) }
 
     const items = [
-        ["Dashboard", dashboardLink], ["Students", studentsLink],
-        ["Matching", matchingLink], ["Review", reviewLink],
+        ["Dashboard", toHref(dashboardLink, "/dashboard")], ["Students", toHref(studentsLink, "/students")],
+        ["Matching", toHref(matchingLink, "/matching")], ["Review", toHref(reviewLink, "/matches/aarav-subhedar-aayush-karade")],
     ]
     const toggleBtn = (t, title, icon) => (
         <button
@@ -91,7 +98,7 @@ export default function Masthead(props) {
                 </div>
                 <span>Staff</span>
             </div>
-            <a href={homeLink} style={{ display: "inline-block", fontFamily: display, fontSize: 34, fontWeight: 700, lineHeight: 1.2, color: C.ink, textDecoration: "none" }}>
+            <a href={toHref(homeLink, "/")} style={{ display: "inline-block", fontFamily: display, fontSize: 34, fontWeight: 700, lineHeight: 1.2, color: C.ink, textDecoration: "none" }}>
                 Ver<span style={{ color: C.accent }}>bund</span>
             </a>
             <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.18em", color: C.faint, marginTop: 4 }}>
@@ -113,9 +120,9 @@ export default function Masthead(props) {
 
 addPropertyControls(Masthead, {
     active: { type: ControlType.Enum, title: "Active tab", options: ["Dashboard", "Students", "Matching", "Review"], defaultValue: "Dashboard" },
-    homeLink: { type: ControlType.Link, title: "Logo link", defaultValue: "/" },
-    dashboardLink: { type: ControlType.Link, title: "Dashboard link", defaultValue: "/dashboard" },
-    studentsLink: { type: ControlType.Link, title: "Students link", defaultValue: "/students" },
-    matchingLink: { type: ControlType.Link, title: "Matching link", defaultValue: "/matching" },
-    reviewLink: { type: ControlType.Link, title: "Review link", defaultValue: "/matches/aarav-subhedar-aayush-karade" },
+    homeLink: { type: ControlType.String, title: "Logo path (e.g. /)", defaultValue: "/" },
+    dashboardLink: { type: ControlType.String, title: "Dashboard path", defaultValue: "/dashboard" },
+    studentsLink: { type: ControlType.String, title: "Students path", defaultValue: "/students" },
+    matchingLink: { type: ControlType.String, title: "Matching path", defaultValue: "/matching" },
+    reviewLink: { type: ControlType.String, title: "Review path", defaultValue: "/matches/aarav-subhedar-aayush-karade" },
 })

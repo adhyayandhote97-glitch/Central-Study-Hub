@@ -17,6 +17,13 @@ const btn = (primary: boolean, small = false) => ({
     cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" as const,
 })
 
+// Only follow real URLs. Anything else (empty, or a Framer page-picker reference that a
+// plain <a> can't open) falls back to the default path, so buttons never lead to a 404.
+const toHref = (value, fallback) => {
+    const v = typeof value === "string" ? value.trim() : ""
+    return /^(\/|https?:|mailto:|#)/.test(v) ? v : fallback
+}
+
 /**
  * The four big numbers on the Dashboard, plus the "Pending matches" heading under them.
  * @framerSupportedLayoutWidth any
@@ -39,7 +46,7 @@ export default function StatStrip(props) {
                 {sectionTitle && (
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", paddingBottom: 8, borderBottom: `1px solid ${C.ink}` }}>
                         <span style={{ fontSize: 14, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{sectionTitle}</span>
-                        {linkLabel && <a href={link} style={{ fontSize: 12, color: C.accent, textTransform: "uppercase", letterSpacing: "0.05em", textDecoration: "none" }}>{linkLabel}</a>}
+                        {linkLabel && <a href={toHref(link, "/matching")} style={{ fontSize: 12, color: C.accent, textTransform: "uppercase", letterSpacing: "0.05em", textDecoration: "none" }}>{linkLabel}</a>}
                     </div>
                 )}
             </div>
@@ -58,5 +65,5 @@ addPropertyControls(StatStrip, {
     l4: { type: ControlType.String, title: "Label 4", defaultValue: "Flagged for review" },
     sectionTitle: { type: ControlType.String, title: "Section title", defaultValue: "Pending matches" },
     linkLabel: { type: ControlType.String, title: "Link text", defaultValue: "View all 8 →" },
-    link: { type: ControlType.Link, title: "Link", defaultValue: "/matching" },
+    link: { type: ControlType.String, title: "Link path", defaultValue: "/matching" },
 })

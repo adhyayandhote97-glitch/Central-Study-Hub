@@ -46,6 +46,13 @@ function useFilter(ref, apply) {
     })
 }
 
+// Only follow real URLs. Anything else (empty, or a Framer page-picker reference that a
+// plain <a> can't open) falls back to the default path, so buttons never lead to a 404.
+const toHref = (value, fallback) => {
+    const v = typeof value === "string" ? value.trim() : ""
+    return /^(\/|https?:|mailto:|#)/.test(v) ? v : fallback
+}
+
 /**
  * One suggested pair. Put it inside a Collection List of "Matches" and connect each property to a CMS field.
  * @framerSupportedLayoutWidth any
@@ -83,7 +90,7 @@ export default function MatchRow(props) {
                         <div style={{ fontStyle: "italic", color: C.soft, fontSize: 14, marginTop: 8, lineHeight: 1.55 }}>{why}</div>
                     </div>
                     <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
-                        <a href={basePath + slug} style={btn(false, true)}>Review</a>
+                        <a href={slug ? toHref(basePath, "/matches/") + slug : "/matching"} style={btn(false, true)}>Review</a>
                         <button
                             onClick={() => setApproved(!approved)}
                             style={{ ...btn(true, true), ...(approved ? { background: C.good, borderColor: C.good } : {}) }}

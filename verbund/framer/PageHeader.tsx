@@ -17,6 +17,13 @@ const btn = (primary: boolean, small = false) => ({
     cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" as const,
 })
 
+// Only follow real URLs. Anything else (empty, or a Framer page-picker reference that a
+// plain <a> can't open) falls back to the default path, so buttons never lead to a 404.
+const toHref = (value, fallback) => {
+    const v = typeof value === "string" ? value.trim() : ""
+    return /^(\/|https?:|mailto:|#)/.test(v) ? v : fallback
+}
+
 /**
  * Page title, subtitle, up to two buttons, and an optional section heading underneath.
  * @framerSupportedLayoutWidth any
@@ -34,12 +41,14 @@ export default function PageHeader(props) {
         a.download = "verbund-students.csv"
         a.click()
     }
-    const Btn = ({ label, link, primary, onClick = undefined }) =>
-        !label ? null : onClick
-            ? <button style={btn(primary)} onClick={onClick}>{label}</button>
-            : link
-                ? <a href={link} target={/^https?:/.test(link) ? "_blank" : undefined} rel="noreferrer" style={btn(primary)}>{label}</a>
-                : <button style={btn(primary)}>{label}</button>
+    const Btn = ({ label, link, primary, onClick = undefined }) => {
+        if (!label) return null
+        if (onClick) return <button style={btn(primary)} onClick={onClick}>{label}</button>
+        const href = toHref(link, "")
+        return href
+            ? <a href={href} target={/^https?:/.test(href) ? "_blank" : undefined} rel="noreferrer" style={btn(primary)}>{label}</a>
+            : <button style={btn(primary)}>{label}</button>
+    }
     return (
         <div style={{ ...style, width: "100%", background: C.bg, fontFamily: body, color: C.ink }}>
             <div style={inner}>
@@ -68,8 +77,8 @@ addPropertyControls(PageHeader, {
     subtitle: { type: ControlType.String, defaultValue: "Fall term buddy matching is open" },
     secondaryLabel: { type: ControlType.String, title: "Button 1", defaultValue: "View students" },
     secondaryAction: { type: ControlType.Enum, title: "Button 1 does", options: ["Open link", "Export students CSV"], defaultValue: "Open link" },
-    secondaryLink: { type: ControlType.Link, title: "Button 1 link", defaultValue: "/students", hidden: (p) => p.secondaryAction === "Export students CSV" },
+    secondaryLink: { type: ControlType.String, title: "Button 1 path", defaultValue: "/students", hidden: (p) => p.secondaryAction === "Export students CSV" },
     primaryLabel: { type: ControlType.String, title: "Button 2", defaultValue: "Review matches" },
-    primaryLink: { type: ControlType.Link, title: "Button 2 link", defaultValue: "/matching" },
+    primaryLink: { type: ControlType.String, title: "Button 2 path", defaultValue: "/matching" },
     sectionTitle: { type: ControlType.String, title: "Section title", defaultValue: "" },
 })
